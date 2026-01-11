@@ -1,0 +1,2065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Sentinel: Enterprise Edition</title>
+    
+    <!-- Core Libraries -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Animation & Charts -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+        
+        :root {
+            /* FORCE DARK MODE VARIABLES BY DEFAULT */
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #0ea5e9;
+            --accent: #8b5cf6;
+            --success: #22c55e;
+            --warning: #eab308;
+            --danger: #ef4444;
+            
+            /* Dark Theme Colors mapped to Root */
+            --surface: #1e293b;
+            --background: #0f172a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--background); 
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Glassmorphism */
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+        }
+
+        /* Animations */
+        @keyframes scanline {
+            0% { transform: translateY(-100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(500%); opacity: 0; }
+        }
+        
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 0.3; }
+            100% { transform: scale(0.95); opacity: 0.7; }
+        }
+
+        @keyframes blink-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        
+        .pulse-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 4px solid var(--danger);
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--danger);
+            border-radius: 50%;
+            display: inline-block;
+            animation: blink-red 1.5s infinite;
+        }
+
+        /* Tooltip Container */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 260px;
+            background-color: #0f172a;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 50;
+            bottom: 140%;
+            left: 50%;
+            margin-left: -130px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem;
+            font-weight: normal;
+            pointer-events: none;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #0f172a transparent transparent transparent;
+        }
+        
+        .text-highlight-hype { background-color: rgba(234, 179, 8, 0.2); border-bottom: 2px solid #eab308; color: #fef08a; }
+        .text-highlight-academic { background-color: rgba(99, 102, 241, 0.2); border-bottom: 2px solid #6366f1; color: #c7d2fe; }
+        .text-highlight-corporate { background-color: rgba(14, 165, 233, 0.2); border-bottom: 2px solid #0ea5e9; color: #bae6fd; }
+        .text-highlight-filler { background-color: rgba(100, 116, 139, 0.2); border-bottom: 2px solid #64748b; color: #e2e8f0; }
+
+        /* Utility */
+      .text-gradient {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            background-clip: text; /* Standard property added */
+            -webkit-text-fill-color: transparent;
+        }
+        /* ... existing styles ... */
+        
+      .text-gradient {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            background-clip: text; 
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- PASTE THIS NEW CODE HERE --- */
+        @keyframes drift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes twinkle { 0%, 100% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
+        @keyframes matrix-fall { 0% { transform: translateY(-100%); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(100vh); opacity: 0; } }
+        @keyframes grid-move { 0% { transform: perspective(500px) rotateX(60deg) translateY(0); } 100% { transform: perspective(500px) rotateX(60deg) translateY(50px); } }
+
+        .galaxy-bg {
+            background: linear-gradient(135deg, #020617 0%, #0f172a 40%, #1e1b4b 70%, #312e81 100%);
+            background-size: 400% 400%; animation: drift 30s ease infinite;
+            position: fixed; inset: 0; z-index: 0;
+        }
+        .star { position: absolute; background: white; border-radius: 50%; animation: twinkle 4s infinite ease-in-out; box-shadow: 0 0 10px rgba(255, 255, 255, 0.6); }
+        .data-particle { position: absolute; color: rgba(99, 102, 241, 0.3); font-family: 'JetBrains Mono', monospace; font-size: 10px; user-select: none; animation: matrix-fall linear infinite; }
+        .cyber-grid {
+            position: fixed; bottom: -50%; left: -50%; width: 200%; height: 100%;
+            background-image: linear-gradient(rgba(99, 102, 241, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(99, 102, 241, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px; animation: grid-move 20s linear infinite; z-index: 1; pointer-events: none; mask-image: linear-gradient(to top, rgba(0,0,0,1), transparent 60%);
+        }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3); }
+        .feature-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease; }
+        .feature-card:hover { background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.3); transform: translateY(-5px); }
+        .animate-float { animation: float 8s ease-in-out infinite; }
+
+    </style> <!-- This is the closing tag -->
+    </style>
+</head>
+<body class="dark">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+        // ==========================================
+        // 1. DATASETS
+        // ==========================================
+
+        const AI_VOCABULARY = {
+            academic: {
+                words: ["delve", "nuanced", "multifaceted", "plethora", "myriad", "testament", "underscore", "foster", "mitigate", "elucidate", "exemplify", "curate", "intertwined", "tapestry", "realm", "landscape", "pivotal", "paramount", "intrinsic"],
+                desc: "Academic/Formal",
+                risk: "Medium",
+                reason: "AI is heavily trained on research papers, creating a bias towards formal transitional phrases like 'delve' which are rare in casual human chat."
+            },
+            corporate: {
+                words: ["leverage", "synergy", "paradigm", "streamline", "optimize", "robust", "holistic", "bandwidth", "alignment", "ecosystem", "scalable", "actionable", "granularity", "mission-critical", "spearhead", "ideation", "touchpoint"],
+                desc: "Corporate Speak",
+                risk: "High",
+                reason: "LLMs prioritize 'safe', professional-sounding language often found in press releases and corporate documentation."
+            },
+            hype: {
+                words: ["game-changing", "revolutionary", "cutting-edge", "unprecedented", "state-of-the-art", "seamless", "immersive", "empower", "unlock", "unleash", "transformative", "reimagine", "groundbreaking", "breathtaking", "stunning"],
+                desc: "Marketing Hype",
+                risk: "High",
+                reason: "Generative models default to hyperbolic adjectives when asked to describe products, lacking the nuance of human critique."
+            },
+            filler: {
+                words: ["it is important to note", "in conclusion", "furthermore", "moreover", "additionally", "significantly", "arguably", "undeniably", "summary", "lastly", "to summarize", "consequently", "it's worth noting"],
+                desc: "Structural Filler",
+                risk: "Medium",
+                reason: "Models use these linguistic anchors to structure their output logic, often maintaining perfect grammar where humans would use sentence fragments."
+            }
+        };
+
+        const GLOSSARY = [
+            { term: "Deepfake", def: "Synthetic media (video/audio) where a person's likeness is replaced by another's using deep learning." },
+            { term: "Hallucination", def: "A confident response by an AI that does not justify its data training; essentially, the AI making things up." },
+            { term: "Prompt Injection", def: "A security exploit where a user manipulates an LLM's input to bypass safety filters." },
+            { term: "Zero-Shot Learning", def: "An AI's ability to complete a task it wasn't explicitly trained for, based on general knowledge." },
+            { term: "GAN (Generative Adversarial Network)", def: "Two neural networks contesting with each other in a game (one generates, one judges) to create realistic data." },
+            { term: "Temperature", def: "A parameter in AI generation that controls randomness. High temp = creative/chaotic; Low temp = deterministic/repetitive." },
+            { term: "Artifacts", def: "Visual errors in AI images, such as extra fingers, mismatched earrings, or nonsensical text." },
+            { term: "Voice Cloning", def: "Using AI to analyze a short audio clip of a person and generate new speech in their voice." },
+            { term: "RVC (Retrieval-based Voice Conversion)", def: "A popular technology for real-time voice changing and cloning, often used in scams." },
+            { term: "Spectrogram", def: "A visual representation of the spectrum of frequencies of a signal as it varies with time." },
+            { term: "Model Collapse", def: "A theoretical degeneration of AI models trained on AI-generated data, leading to loss of variety and logic." },
+            { term: "Watermarking", def: "Invisible signals embedded in AI content (like C2PA) to prove origin." }
+        ];
+
+        const LIVE_THREATS = [
+            { type: "AUDIO", text: "New 'Ghost' Audio Model bypassing bank voice ID in < 3s.", url: "https://www.google.com/search?q=AI+audio+voice+id+bypass+news" },
+            { type: "SCAM", text: "LinkedIn Profile Scraping active: Harvesting voice samples for CEO fraud.", url: "https://www.google.com/search?q=linkedin+voice+cloning+scam" },
+            { type: "VIDEO", text: "Zoom Deepfake Injection tools selling on dark web for $500.", url: "https://www.google.com/search?q=zoom+deepfake+injection+tools" },
+            { type: "TEXT", text: "GPT-4 'Spear Phishing' campaigns targeting HR depts with custom resumes.", url: "https://www.google.com/search?q=AI+spear+phishing+HR" },
+            { type: "SCAM", text: "WhatsApp 'Hi Mum' scam utilizing RVC v2 models globally.", url: "https://www.google.com/search?q=whatsapp+hi+mum+scam+ai" },
+            { type: "MALWARE", text: "Polymorphic code generation detected in Python scripts.", url: "https://www.google.com/search?q=AI+polymorphic+malware" },
+            { type: "AUDIO", text: "Celebrity voice clones used in YouTube crypto giveaways.", url: "https://www.google.com/search?q=youtube+crypto+scam+deepfake" }
+        ];
+
+        const NEWS_FEED = [
+            { id: 1, tag: "SCAM ALERT", date: "Today", title: "New 'CEO Fraud' Wave", content: "Scammers are using deepfake audio on WhatsApp to impersonate executives asking for gift cards. Verification via secondary channel is mandatory.", url: "https://www.google.com/search?q=ceo+gift+card+whatsapp+scam" },
+            { id: 2, tag: "UPDATE", date: "Yesterday", title: "Midjourney v7 Rumors", content: "Expected to solve the 'hand problem' entirely. We need new detection methods for skin texture and lighting consistency.", url: "https://www.google.com/search?q=midjourney+v7+hands+rumors" },
+            { id: 3, tag: "SECURITY", date: "2 Days Ago", title: "Gmail AI Filters", content: "Google's new spam filters are catching 99% of simple AI-generated phishing emails. Attackers are evolving to use 'human-in-the-loop' editing.", url: "https://www.google.com/search?q=gmail+ai+spam+filters+update" },
+            { id: 4, tag: "TECH", date: "Last Week", title: "Watermarking Standards", content: "Major tech companies agree to invisible watermarking for AI content. Learn how to spot the 'C2PA' metadata in image headers.", url: "https://www.google.com/search?q=c2pa+watermarking+standards" }
+        ];
+
+       const COURSES = [
+            // =========================================================================
+            // 1. VISUAL FORENSICS
+            // =========================================================================
+            {
+                id: "v1", category: "Visual Forensics", title: "101: Hand Topology & Fingers", level: "Beginner", duration: "10 min", xp: 100,
+                content: [
+                    "Lesson: Generative AI struggles with 'topology' (how parts connect). Humans have exactly 5 fingers. AI often generates 4, 6, or merges fingers.",
+                    "Check 1: Count the fingers. Are there exactly 5?",
+                    "Check 2: Look at the knuckles. AI often creates 'noodle fingers' without distinct joints.",
+                    "Check 3: Grip logic. If holding a cup, do the fingers wrap around it correctly, or do they melt into the object?"
+                ],
+                quizzes: [
+                    { question: "How many fingers does AI often render?", options: ["Exactly 5", "Random (4, 6, 7)", "Always 3", "None"], answer: 1 },
+                    { question: "What is 'Noodle Finger'?", options: ["A pasta dish", "Fingers without joints/bones", "Long fingers", "Broken fingers"], answer: 1 },
+                    { question: "What implies a fake grip?", options: ["Fingers melting into object", "Tight grip", "Loose grip", "Using two hands"], answer: 0 },
+                    { question: "Why does AI struggle with hands?", options: ["It hates hands", "Lack of topology training", "It's too easy", "Cameras are bad"], answer: 1 },
+                    { question: "What should you count first?", options: ["Toes", "Teeth", "Fingers", "Ears"], answer: 2 },
+                    { question: "If a hand is hidden in a pocket...", options: ["It is definitely fake", "It is suspicious (hiding flaws)", "It is fine", "It is cold"], answer: 1 },
+                    { question: "Real knuckles are:", options: ["Smooth", "Wrinkled and bumpy", "Invisible", "Square"], answer: 1 },
+                    { question: "Fingernails in AI often look:", options: ["Perfect", "Missing or mismatched", "Painted", "Long"], answer: 1 },
+                    { question: "A hand passing through a table is:", options: ["A ghost", "Physics clipping error (AI)", "Magic", "A camera trick"], answer: 1 },
+                    { question: "Topology refers to:", options: ["Maps", "The study of connectivity", "Top hats", "Colors"], answer: 1 }
+                ]
+            },
+            {
+                id: "v2", category: "Visual Forensics", title: "Earrings & Symmetry", level: "Beginner", duration: "8 min", xp: 100,
+                content: [
+                    "Lesson: Diffusion models generate pixels locally, often forgetting global symmetry.",
+                    "Check 1: Mismatched styles. Is one earring a hoop and the other a stud?",
+                    "Check 2: Connection points. Does the earring actually pierce the earlobe, or does it float?",
+                    "Check 3: Gravity. Heavy earrings should pull the earlobe down slightly. AI misses this physics detail."
+                ],
+                quizzes: [
+                    { question: "What is a common jewelry error?", options: ["Too shiny", "Mismatched styles", "Too expensive", "Gold color"], answer: 1 },
+                    { question: "What should heavy earrings do?", options: ["Float", "Pull the earlobe down", "Glow", "Disappear"], answer: 1 },
+                    { question: "If one earring is a hoop and one is a stud...", options: ["It's fashion", "It's likely AI", "It's broken", "It's dark"], answer: 1 },
+                    { question: "Check connection points to see if:", options: ["It pierces the skin", "It is glued", "It is magnetic", "It is colorful"], answer: 0 },
+                    { question: "AI generates pixels based on:", options: ["Global logic", "Local context", "Perfect math", "History"], answer: 1 },
+                    { question: "Symmetry errors are common in:", options: ["Photography", "Diffusion models", "Real life", "Mirrors"], answer: 1 },
+                    { question: "Floating jewelry indicates:", options: ["Magic", "AI generation", "Invisible string", "Wind"], answer: 1 },
+                    { question: "Glasses frames should be:", options: ["Symmetrical", "Different shapes", "Broken", "Liquid"], answer: 0 },
+                    { question: "If a necklace blurs into the neck:", options: ["It's a choker", "It's an AI artifact", "It's skin paint", "It's a tattoo"], answer: 1 },
+                    { question: "Global symmetry refers to:", options: ["The whole image matching", "The world", "Circles", "Colors"], answer: 0 }
+                ]
+            },
+            {
+                id: "v3", category: "Visual Forensics", title: "Eye Reflections (Catchlights)", level: "Advanced", duration: "15 min", xp: 200,
+                content: [
+                    "Lesson: The eyes are mirrors. They must reflect the same world.",
+                    "Check 1: Shape. If the reflection in the left eye is square (window), the right eye must also be square.",
+                    "Check 2: Light source. If the sun is on the left, reflections should align.",
+                    "Check 3: Pupil shape. AI sometimes generates non-circular (jagged) pupils."
+                ],
+                quizzes: [
+                    { question: "Catchlights are:", options: ["Flashlights", "Reflections in the eye", "Sun glasses", "Lasers"], answer: 1 },
+                    { question: "Reflections in both eyes must:", options: ["Be different", "Match", "Be colors", "Be dark"], answer: 1 },
+                    { question: "Square reflections usually indicate:", options: ["The sun", "A window or softbox", "The moon", "A car"], answer: 1 },
+                    { question: "Irregular pupil shapes (not round) suggest:", options: ["Eye disease", "AI generation", "Contact lenses", "Fatigue"], answer: 1 },
+                    { question: "If the person is outside, reflections should show:", options: ["Studio lights", "Sky/Horizon", "Darkness", "Text"], answer: 1 },
+                    { question: "Zooming into eyes is:", options: ["Rude", "A standard forensic step", "Impossible", "Blurry"], answer: 1 },
+                    { question: "Heterochromia (different eye colors) in AI is:", options: ["Intentional", "Often an accident", "Rare", "Always fake"], answer: 1 },
+                    { question: "The 'Dead Eye' look refers to:", options: ["Glassy/unfocused look", "Closed eyes", "Sunglasses", "Red eyes"], answer: 0 },
+                    { question: "Reflections should align with:", options: ["The shoes", "The light source", "The hair", "The background"], answer: 1 },
+                    { question: "In deepfakes, blinking is:", options: ["Perfect", "Sometimes unnatural/rare", "Fast", "Slow"], answer: 1 }
+                ]
+            },
+            {
+                id: "v4", category: "Visual Forensics", title: "Background Text Logic", level: "Intermediate", duration: "10 min", xp: 150,
+                content: [
+                    "Lesson: AI treats text as shapes, not language (The 'Hieroglyph' Effect).",
+                    "Check 1: Storefronts. Look at signs in the background. Do they spell real words?",
+                    "Check 2: Logos. Is the logo on the shirt actually Nike/Adidas, or a weird hybrid?",
+                    "Check 3: Keyboards. Laptop keys in AI images are often just random grid blobs."
+                ],
+                quizzes: [
+                    { question: "AI sees text as:", options: ["Language", "Shapes/Textures", "Codes", "Numbers"], answer: 1 },
+                    { question: "Background signs often look like:", options: ["English", "Alien Hieroglyphs", "Spanish", "Numbers"], answer: 1 },
+                    { question: "Text on a curved shirt should:", options: ["Stay straight", "Warp with the fabric", "Disappear", "Change font"], answer: 1 },
+                    { question: "AI generated keyboards usually have:", options: ["QWERTY layout", "Random grid blobs", "Missing keys", "ABC layout"], answer: 1 },
+                    { question: "Newer models (DALL-E 3) are:", options: ["Worse at text", "Getting better at text", "Giving up", "Removing text"], answer: 1 },
+                    { question: "Gibberish text is a sign of:", options: ["Dyslexia", "Generative AI", "Old cameras", "Low resolution"], answer: 1 },
+                    { question: "If a book cover has no title, just squiggles:", options: ["It's minimal art", "Likely AI", "It's blurry", "It's a diary"], answer: 1 },
+                    { question: "Magazine dates in AI images are:", options: ["Correct", "Often nonsensical (e.g., 2099 or 32nd)", "Standard", "Bold"], answer: 1 },
+                    { question: "Street signs in AI cities often:", options: ["Direct traffic", "Point nowhere/Blank", "Have GPS", "Light up"], answer: 1 },
+                    { question: "To fix text, scammers often:", options: ["Leave it", "Photoshop/Inpaint it", "Crop it out", "Blur it"], answer: 1 }
+                ]
+            },
+            {
+                id: "v5", category: "Visual Forensics", title: "Hairlines & Blending", level: "Advanced", duration: "12 min", xp: 180,
+                content: [
+                    "Lesson: Hair is computationally expensive. AI often 'smudges' it.",
+                    "Check 1: The Root. Does the hair grow out of the scalp, or does it look pasted on?",
+                    "Check 2: Floating Strands. Look for hairs that start and end nowhere.",
+                    "Check 3: The Blur. AI often blurs the forehead line to hide connection errors."
+                ],
+                quizzes: [
+                    { question: "Why is hair hard for AI?", options: ["It's the wrong color", "High complexity/strand count", "It's too long", "It moves"], answer: 1 },
+                    { question: "A 'pasted on' look suggests:", options: ["A wig", "AI Generation", "Hair gel", "Bad haircut"], answer: 1 },
+                    { question: "Floating hair strands are:", options: ["Magic", "Artifacts", "Dust", "Wind"], answer: 1 },
+                    { question: "Excessive blurring at the hairline hides:", options: ["Wrinkles", "Connection errors", "Acne", "Sweat"], answer: 1 },
+                    { question: "Individual strands should:", options: ["Merge into skin", "Have a clear start/end", "Disappear", "Change color"], answer: 1 },
+                    { question: "AI beards often look:", options: ["Scruffy", "Like a solid texture/moss", "Sharp", "Wet"], answer: 1 },
+                    { question: "In a windy photo, hair should:", options: ["Blow in one direction", "Go everywhere", "Stay still", "Disappear"], answer: 0 },
+                    { question: "The 'crown' of the head is:", options: ["A hat", "Where hair spirals out", "The forehead", "The ears"], answer: 1 },
+                    { question: "Overly shiny hair might look like:", options: ["Plastic/Helmet", "Wet hair", "Clean hair", "Metal"], answer: 0 },
+                    { question: "Eyebrows in AI are often:", options: ["Missing", "Too symmetrical/painted", "Bushy", "Different colors"], answer: 1 }
+                ]
+            },
+            {
+                id: "v6", category: "Visual Forensics", title: "Subsurface Scattering (Skin)", level: "Pro", duration: "15 min", xp: 250,
+                content: [
+                    "Lesson: Real skin is translucent. Light passes through it.",
+                    "Check 1: Backlighting. If the sun is behind them, ears/fingers should glow red.",
+                    "Check 2: Waxiness. AI skin often reflects light like plastic (opaque).",
+                    "Check 3: Pores. Zoom in. Real skin has irregular texture. AI skin is often smoothed noise."
+                ],
+                quizzes: [
+                    { question: "Subsurface Scattering (SSS) refers to:", options: ["Scattering of ants", "Light penetrating skin", "Reflection", "Shadows"], answer: 1 },
+                    { question: "Backlit ears should appear:", options: ["Black", "Glowing Red", "White", "Blue"], answer: 1 },
+                    { question: "Opaque skin looks like:", options: ["Water", "Wax/Plastic", "Glass", "Cloth"], answer: 1 },
+                    { question: "Real skin texture is:", options: ["Perfectly smooth", "Irregular/Porous", "Grid-like", "Pixelated"], answer: 1 },
+                    { question: "AI skin often lacks:", options: ["Color", "Micro-imperfections", "Shape", "Lighting"], answer: 1 },
+                    { question: "The 'Uncanny Valley' feels:", options: ["Comfortable", "Eerie/Wrong", "Happy", "Exciting"], answer: 1 },
+                    { question: "Over-smoothed skin indicates:", options: ["Good makeup", "Denoising/AI", "Youth", "Sunlight"], answer: 1 },
+                    { question: "Freckles in AI are often:", options: ["Real", "Pixel artifacts/Too round", "Missing", "Dark"], answer: 1 },
+                    { question: "Wrinkles in AI often:", options: ["Deepen", "End randomly/don't follow muscles", "Look real", "Disappear"], answer: 1 },
+                    { question: "Velvet-like skin texture is a sign of:", options: ["Midjourney v4", "Real photography", "Sweat", "Oil"], answer: 0 }
+                ]
+            },
+            {
+                id: "v7", category: "Visual Forensics", title: "Shadows & Lighting Physics", level: "Advanced", duration: "12 min", xp: 180,
+                content: [
+                    "Lesson: Light travels in straight lines. Shadows must converge to the source.",
+                    "Check 1: Direction. Are face shadows going left, but floor shadows going right?",
+                    "Check 2: Contact Shadows. Do feet touch the ground, or are they floating (missing shadow)?",
+                    "Check 3: Consistency. Is the subject lit by 'soft' light but the background is 'hard' sunlight?"
+                ],
+                quizzes: [
+                    { question: "Shadows must align with:", options: ["The moon", "The light source", "The camera", "The shoes"], answer: 1 },
+                    { question: "Conflicting shadow directions imply:", options: ["Multiple suns", "Composite/AI image", "Mirrors", "Clouds"], answer: 1 },
+                    { question: "A 'Contact Shadow' is found:", options: ["On the face", "Where object meets ground", "In the sky", "On walls"], answer: 1 },
+                    { question: "Floating feet indicate:", options: ["Jumping", "Missing contact shadows", "Running", "Dancing"], answer: 1 },
+                    { question: "Hard light creates:", options: ["Blurry edges", "Sharp/Crisp shadows", "No shadows", "Colors"], answer: 1 },
+                    { question: "Soft light creates:", options: ["Darkness", "Diffused/Gradual shadows", "Sharp lines", "Spots"], answer: 1 },
+                    { question: "If a face is bright but the room is dark:", options: ["It's a spotlight", "Lighting mismatch", "It's night", "It's day"], answer: 1 },
+                    { question: "Impossible shadows violate:", options: ["Physics", "Chemistry", "Biology", "Math"], answer: 0 },
+                    { question: "Global Illumination is:", options: ["A conspiracy", "How light bounces in a scene", "A lightbulb", "The sun"], answer: 1 },
+                    { question: "Inconsistent weather (rain vs sun) suggests:", options: ["A storm", "Image manipulation", "Rainbows", "Wind"], answer: 1 }
+                ]
+            },
+
+            // =========================================================================
+            // 2. AUDIO FORENSICS
+            // =========================================================================
+            {
+                id: "a1", category: "Audio Defense", title: "Breathing & Pauses", level: "Essential", duration: "8 min", xp: 150,
+                content: [
+                    "Lesson: Humans need oxygen. AI does not.",
+                    "Check 1: Intake Breaths. Listen for the subtle 'hhaaa' before a long sentence.",
+                    "Check 2: Pause Duration. AI creates 'absolute silence' between words. Real recordings have 'room tone' (air conditioner, wind).",
+                    "Check 3: Sentence Length. AI can speak for 60 seconds without breathing. Humans can't."
+                ],
+                quizzes: [
+                    { question: "Humans breath every:", options: ["30 seconds", "4-8 seconds", "2 minutes", "Never"], answer: 1 },
+                    { question: "Absolute silence between words suggests:", options: ["A good mic", "Digital generation/gating", "A quiet room", "Whispering"], answer: 1 },
+                    { question: "Room Tone is:", options: ["Music", "Background noise floor", "Wall color", "Volume"], answer: 1 },
+                    { question: "Continuous speech without breath is:", options: ["Impressive", "Physiologically impossible", "Singing", "Rapping"], answer: 1 },
+                    { question: "Micro-pauses are:", options: ["Mistakes", "Natural thinking time", "Glitches", "Edits"], answer: 1 },
+                    { question: "If the audio cuts to 'Dead Air':", options: ["It's spliced/AI", "The mic broke", "They stopped", "Signal lost"], answer: 0 },
+                    { question: "Inhale sounds are:", options: ["Annoying", "Proof of lungs/life", "Loud", "Scary"], answer: 1 },
+                    { question: "TTS stands for:", options: ["Text To Speech", "Time To Sleep", "Talk To Scammers", "True Tone Sound"], answer: 0 },
+                    { question: "A continuous 45-second sentence is:", options: ["A run-on sentence", "A red flag for AI", "Poetry", "Fast talking"], answer: 1 },
+                    { question: "Natural speech has:", options: ["Uniform rhythm", "Variable rhythm", "No rhythm", "Perfect beat"], answer: 1 }
+                ]
+            },
+            {
+                id: "a2", category: "Audio Defense", title: "Metallic Artifacts (Vocoding)", level: "Advanced", duration: "12 min", xp: 200,
+                content: [
+                    "Lesson: AI reconstitutes audio from data, often leaving a 'robotic' residue.",
+                    "Check 1: The Shimmer. Listen to 'S' and 'F' sounds. Do they sound like a metal fan?",
+                    "Check 2: End of Sentence. Artifacts often appear at the tail end of a word as the model stops generating.",
+                    "Check 3: Bitrate drops. Does the voice suddenly sound like a bad cell connection for 0.5 seconds?"
+                ],
+                quizzes: [
+                    { question: "Vocoder artifacts sound like:", options: ["Drums", "Metallic buzzing/Shimmer", "Birds", "Water"], answer: 1 },
+                    { question: "Sibilance refers to:", options: ["Loud noises", "'S' and 'F' sounds", "Silence", "Bass"], answer: 1 },
+                    { question: "Artifacts often appear:", options: ["At the start", "At the tail/end of words", "In the middle", "Never"], answer: 1 },
+                    { question: "Sudden quality drops indicate:", options: ["Wind", "Model processing errors", "Bad phone", "Distance"], answer: 1 },
+                    { question: "A 'Phasey' sound is:", options: ["Swirling/Watery", "Clear", "Loud", "Deep"], answer: 0 },
+                    { question: "High frequency buzzing is:", options: ["Normal", "A compression/AI artifact", "Tinnitus", "Radio"], answer: 1 },
+                    { question: "Robotic sounding vowels suggest:", options: ["Autotune/AI", "Accents", "Singing", "Colds"], answer: 0 },
+                    { question: "Low bitrate audio sounds:", options: ["Crisp", "Muffled/Underwater", "Fast", "Slow"], answer: 1 },
+                    { question: "Spectral analysis visualizes:", options: ["Colors", "Frequencies over time", "Volume only", "Words"], answer: 1 },
+                    { question: "Mel-spectrograms are used to:", options: ["Train Audio AI", "Play music", "Record video", "Type text"], answer: 0 }
+                ]
+            },
+            {
+                id: "a3", category: "Audio Defense", title: "Emotional Mismatch", level: "Intermediate", duration: "10 min", xp: 150,
+                content: [
+                    "Lesson: AI models clone timbre (voice sound) but struggle with prosody (emotional delivery).",
+                    "Check 1: Panic vs Tone. Script: 'Help I'm kidnapped!' Tone: Flat, bored, reading a list.",
+                    "Check 2: Laughter. AI laughter is repetitive and doesn't affect the breath of the following words.",
+                    "Check 3: Micro-tremors. Fear causes voice shaking. AI voices are often perfectly steady."
+                ],
+                quizzes: [
+                    { question: "Prosody refers to:", options: ["Pronunciation", "Rhythm, stress, and intonation", "Volume", "Speed"], answer: 1 },
+                    { question: "A 'flat' tone in an emergency call is:", options: ["Brave", "Suspicious/AI", "Calm", "Professional"], answer: 1 },
+                    { question: "AI laughter often sounds:", options: ["Joyful", "Mechanical/Repetitive", "Loud", "Quiet"], answer: 1 },
+                    { question: "Real laughter affects:", options: ["Nothing", "The breathing/speech after it", "The phone", "The signal"], answer: 1 },
+                    { question: "Voice tremors indicate:", options: ["Cold", "Fear/Stress", "Hunger", "Sleep"], answer: 1 },
+                    { question: "Perfect pitch stability is:", options: ["Human", "Robotic", "Musical", "Natural"], answer: 1 },
+                    { question: "If the words say 'Angry' but the voice says 'Calm':", options: ["They are acting", "Emotional Mismatch (AI)", "They are crazy", "It is sarcasm"], answer: 1 },
+                    { question: "Screaming is hard for AI because:", options: ["It hurts", "Training data usually lacks screaming", "It is loud", "It breaks speakers"], answer: 1 },
+                    { question: "Irony and Sarcasm are:", options: ["Easy for AI", "Difficult/Context dependent", "Impossible", "Common"], answer: 1 },
+                    { question: "Timbre refers to:", options: ["Time", "The unique texture of a voice", "Volume", "Pitch"], answer: 1 }
+                ]
+            },
+            {
+                id: "a4", category: "Audio Defense", title: "Latency & Interruptions", level: "Pro", duration: "15 min", xp: 250,
+                content: [
+                    "Lesson: Real-time Voice Changers (RVC) need processing time.",
+                    "Check 1: The Delay. Ask a rapid math question ('What is 5 plus 7?'). A human answers instantly. RVC has a lag.",
+                    "Check 2: Interruption. Talk OVER them. The AI model will get confused or keep playing its buffer.",
+                    "Check 3: The Glitch. When the AI fails, you might hear the scammer's real voice for a millisecond."
+                ],
+                quizzes: [
+                    { question: "RVC stands for:", options: ["Real Voice Call", "Retrieval-based Voice Conversion", "Robotic Voice Code", "Remote Video Control"], answer: 1 },
+                    { question: "Latency is:", options: ["Volume", "Delay in processing", "Pitch", "Speed"], answer: 1 },
+                    { question: "To test latency, ask:", options: ["A story", "A rapid calculation/question", "A long question", "Nothing"], answer: 1 },
+                    { question: "Interrupting a deepfake often causes:", options: ["Anger", "Glitches/Audio overlap errors", "Silence", "Laughter"], answer: 1 },
+                    { question: "If the voice changes for a split second:", options: ["It's a mask slip", "It's the wind", "It's a cough", "It's fine"], answer: 0 },
+                    { question: "Live conversion requires:", options: ["No power", "GPU Processing", "Nothing", "Paper"], answer: 1 },
+                    { question: "Buffer lag sounds like:", options: ["Echo", "Awkward silence before answering", "Static", "Music"], answer: 1 },
+                    { question: "Overlapping speech (Talking over) is:", options: ["Polite", "Hard for AI to process", "Easy", "Quiet"], answer: 1 },
+                    { question: "A 'Mask Slip' reveals:", options: ["The face", "The original voice", "The IP", "The location"], answer: 1 },
+                    { question: "Low latency is:", options: ["Bad", "Good/Fast", "Slow", "Loud"], answer: 1 }
+                ]
+            },
+
+            // =========================================================================
+            // 3. TEXT ANALYSIS
+            // =========================================================================
+            {
+                id: "t1", category: "Text Analysis", title: "The 'Delve' Index (Vocabulary)", level: "Beginner", duration: "8 min", xp: 100,
+                content: [
+                    "Lesson: LLMs (ChatGPT/Claude) are over-trained on academic papers and corporate press releases.",
+                    "Check 1: The Words. 'Delve', 'Underscore', 'Landscape', 'Tapestry', 'Nuanced'.",
+                    "Check 2: Frequency. Humans use 'delve' rarely. AI uses it constantly.",
+                    "Check 3: Adjectives. 'Game-changing', 'Revolutionary', 'Seamless'. (Hype language)."
+                ],
+                quizzes: [
+                    { question: "Which word is an AI hallmark?", options: ["Run", "Delve", "Eat", "Sleep"], answer: 1 },
+                    { question: "LLMs are trained on:", options: ["Street slang", "Academic/Corporate text", "Baby talk", "Nothing"], answer: 1 },
+                    { question: "High frequency of 'Tapestry' suggests:", options: ["Weaving", "AI generation", "History", "Art"], answer: 1 },
+                    { question: "'Game-changing' is:", options: ["Hype adjective", "A verb", "A noun", "Slang"], answer: 0 },
+                    { question: "Humans usually say 'dig into' instead of:", options: ["Run", "Delve", "Jump", "Fly"], answer: 1 },
+                    { question: "RLHF stands for:", options: ["Real Life Has Fun", "Reinforcement Learning from Human Feedback", "Robots Love Human Friends", "Red Light High Frequency"], answer: 1 },
+                    { question: "A 'Nuanced' take is:", options: ["Simple", "Complex/Subtle (AI favorite)", "Wrong", "Loud"], answer: 1 },
+                    { question: "Overuse of 'Seamless' implies:", options: ["Clothing", "Marketing/AI text", "Broken", "Rough"], answer: 1 },
+                    { question: "Vocabulary bias comes from:", options: ["The Training Data", "The user", "The keyboard", "The screen"], answer: 0 },
+                    { question: "To sound human, use:", options: ["Slang/Idioms", "Latin", "Formal codes", "Buzzwords"], answer: 0 }
+                ]
+            },
+            {
+                id: "t2", category: "Text Analysis", title: "Lack of Opinion (The Hedge)", level: "Intermediate", duration: "10 min", xp: 120,
+                content: [
+                    "Lesson: AI is trained to be neutral and safe. It hates taking a hard stance.",
+                    "Check 1: The Hedge. 'It is important to consider...', 'While X is good, Y is also...'",
+                    "Check 2: Definitive statements. A human says 'This movie sucks'. AI says 'The movie has received mixed reviews...'.",
+                    "Check 3: Moralizing. 'It is crucial to prioritize safety...' (Preachy tone)."
+                ],
+                quizzes: [
+                    { question: "Hedging means:", options: ["Gardening", "Avoiding a direct stance", "Betting", "Jumpinig"], answer: 1 },
+                    { question: "AI is trained to be:", options: ["Rude", "Neutral/Safe", "Angry", "Sad"], answer: 1 },
+                    { question: "A strong opinion like 'I hate this' is:", options: ["Likely Human", "Likely AI", "Impossible", "Rare"], answer: 0 },
+                    { question: "Moralizing text sounds:", options: ["Fun", "Preachy/Lecture-like", "Fast", "Quiet"], answer: 1 },
+                    { question: "'It is important to note' is:", options: ["A filler phrase", "A command", "A question", "A lie"], answer: 0 },
+                    { question: "AI avoids:", options: ["Facts", "Controversy/Bias", "Grammar", "Spelling"], answer: 1 },
+                    { question: "Bothsidesism is:", options: ["Arguing for both sides (AI trait)", "A sport", "A game", "Cooking"], answer: 0 },
+                    { question: "Subjectivity is:", options: ["Personal opinion", "Objective fact", "Math", "Science"], answer: 0 },
+                    { question: "Safety filters cause AI to:", options: ["Swear", "Refuse/Lecture", "Cry", "Sleep"], answer: 1 },
+                    { question: "To test for AI, ask for:", options: ["A math problem", "A controversial opinion", "A definition", "A summary"], answer: 1 }
+                ]
+            },
+            {
+                id: "t3", category: "Text Analysis", title: "Structure & Uniformity", level: "Intermediate", duration: "10 min", xp: 150,
+                content: [
+                    "Lesson: AI loves structure. Humans are chaotic.",
+                    "Check 1: Lists. AI almost always defaults to bullet points or numbered lists.",
+                    "Check 2: Sentence Length. AI sentences are often uniform length (medium-medium-medium). Humans vary (Short. Very long complex sentence. Short).",
+                    "Check 3: Connectors. 'Furthermore', 'Moreover', 'In conclusion'. Humans rarely use these in texts/emails."
+                ],
+                quizzes: [
+                    { question: "AI defaults to:", options: ["Paragraphs", "Lists/Bullet points", "Poems", "Songs"], answer: 1 },
+                    { question: "Human sentence length is:", options: ["Uniform", "Variable/Chaotic", "Always long", "Always short"], answer: 1 },
+                    { question: "'Furthermore' is:", options: ["Casual", "Formal connector", "Slang", "Insult"], answer: 1 },
+                    { question: "In a text message, perfect grammar is:", options: ["Normal", "Suspicious", "Required", "Bad"], answer: 1 },
+                    { question: "Burstiness measures:", options: ["Explosions", "Variation in sentence structure", "Speed", "Volume"], answer: 1 },
+                    { question: "Low perplexity means:", options: ["Confusing", "Predictable (AI)", "Smart", "New"], answer: 1 },
+                    { question: "A concluding summary in a short email is:", options: ["Helpful", "An AI structural habit", "Required", "Rude"], answer: 1 },
+                    { question: "Uniformity looks like:", options: ["Blocks of text", "Visual noise", "Art", "Messy"], answer: 0 },
+                    { question: "Humans use fragments like:", options: ["'Lol no'", "'It is imperative'", "'Consequently'", "'Therefore'"], answer: 0 },
+                    { question: "Entropy in text refers to:", options: ["Heat", "Randomness/Unpredictability", "Order", "Cold"], answer: 1 }
+                ]
+            },
+
+            // =========================================================================
+            // 4. SCAM DEFENSE
+            // =========================================================================
+            {
+                id: "s1", category: "Scam Defense", title: "The 'Grandparent' Scam", level: "Essential", duration: "5 min", xp: 500,
+                content: [
+                    "Scenario: You get a call. 'Grandma? It's me. I'm in jail. I broke my nose, that's why I sound weird.'",
+                    "The Tech: Voice cloning from social media videos + emotional manipulation.",
+                    "The Defense: The Safe Word. Ask 'What is the name of your first pet?' or a pre-agreed code word.",
+                    "Action: Hang up. Call their real number."
+                ],
+                quizzes: [
+                    { question: "Who is the primary target?", options: ["Teens", "Elderly/Grandparents", "Babies", "Pets"], answer: 1 },
+                    { question: "Why does the voice sound weird?", options: ["Broken nose (Excuse)", "Bad signal", "Eating", "Sleeping"], answer: 0 },
+                    { question: "What is the best defense?", options: ["Sending money", "The Safe Word", "Crying", "Yelling"], answer: 1 },
+                    { question: "Scammers request money via:", options: ["Check", "Gift Cards/Wire/Crypto", "Cash in person", "Mail"], answer: 1 },
+                    { question: "Why do they say 'Don't tell Mom'?", options: ["It's a secret", "To isolate the victim", "It's a surprise", "They are shy"], answer: 1 },
+                    { question: "Where do they get the voice?", options: ["Magic", "Social Media (TikTok/Instagram)", "Movies", "Radio"], answer: 1 },
+                    { question: "If you are unsure:", options: ["Pay anyway", "Hang up and call the real number", "Guess", "Wait"], answer: 1 },
+                    { question: "Urgency is used to:", options: ["Help you", "Bypass critical thinking", "Save time", "Be efficient"], answer: 1 },
+                    { question: "Bail bondsmen do NOT take:", options: ["Cash", "Apple Gift Cards", "Cards", "Checks"], answer: 1 },
+                    { question: "Voice clones need:", options: ["Hours of audio", "Only 3 seconds of audio", "A studio", "A script"], answer: 1 }
+                ]
+            },
+            {
+                id: "s2", category: "Scam Defense", title: "CEO Fraud (Spear Phishing)", level: "Corporate", duration: "8 min", xp: 300,
+                content: [
+                    "Scenario: Text from the CEO. 'I'm in a meeting. Need you to buy 10 gift cards for a client presentation ASAP.'",
+                    "The Tech: Spoofed numbers or AI-written emails mimicking the CEO's style.",
+                    "The Defense: Channel Hopping. If the request comes via Email, confirm via Slack. If Text, confirm via Call.",
+                    "Red Flag: Urgency + Gift Cards."
+                ],
+                quizzes: [
+                    { question: "Spear Phishing targets:", options: ["Random people", "Specific individuals/Roles", "Fish", "Computers"], answer: 1 },
+                    { question: "CEOs typically ask for:", options: ["Reports", "Gift Cards via WhatsApp", "Coffee", "Files"], answer: 1 },
+                    { question: "The 'Urgency' tactic means:", options: ["Do it fast/Don't think", "Take your time", "Plan ahead", "Be slow"], answer: 0 },
+                    { question: "Channel Hopping means:", options: ["Changing TV channels", "Verifying on a different platform", "Swimming", "Jumping"], answer: 1 },
+                    { question: "Spoofed numbers look like:", options: ["Fake numbers", "The real number/Local codes", "Letters", "Symbols"], answer: 1 },
+                    { question: "If the CEO is 'in a meeting':", options: ["Do not disturb", "It's a common excuse to avoid a call", "Wait", "Go in"], answer: 1 },
+                    { question: "Business payments are made via:", options: ["Invoice/Procurement", "Steam Gift Cards", "Cash app", "Venmo"], answer: 0 },
+                    { question: "AI helps scammers by:", options: ["Writing perfect/persuasive scripts", "Making coffee", "Driving", "Calling"], answer: 0 },
+                    { question: "Social Engineering hacks:", options: ["Computers", "Humans", "Phones", "Doors"], answer: 1 },
+                    { question: "Always verify requests involving:", options: ["Lunch", "Money/Data", "Meetings", "Paper"], answer: 1 }
+                ]
+            },
+            {
+                id: "s3", category: "Scam Defense", title: "Pig Butchering (Crypto Romance)", level: "Advanced", duration: "15 min", xp: 500,
+                content: [
+                    "Scenario: A 'wrong number' text turns into a friendship/romance. They are wealthy and trade Crypto.",
+                    "The Tech: Deepfake profile photos, AI-translated chat scripts.",
+                    "The Process: Fattening (Building trust) -> Butchering (Stealing all funds via a fake exchange app).",
+                    "Red Flag: They refuse to video call, or the video call loops."
+                ],
+                quizzes: [
+                    { question: "Pig Butchering refers to:", options: ["Farming", "Fattening a victim before theft", "Cooking", "Hunting"], answer: 1 },
+                    { question: "It starts with:", options: ["A threat", "A 'wrong number' or romance", "A bill", "A letter"], answer: 1 },
+                    { question: "The scammer usually claims to be:", options: ["Poor", "Wealthy/Successful investor", "A student", "A doctor"], answer: 1 },
+                    { question: "The fake trading app shows:", options: ["Real losses", "Fake massive profits", "Nothing", "News"], answer: 1 },
+                    { question: "When you try to withdraw money:", options: ["It works", "They ask for 'taxes' or fees", "It doubles", "It vanishes"], answer: 1 },
+                    { question: "They avoid video calls because:", options: ["They are shy", "They are fake/using AI photos", "Bad camera", "Sleeping"], answer: 1 },
+                    { question: "If it sounds too good to be true:", options: ["You are lucky", "It is a scam", "Take it", "Invest more"], answer: 1 },
+                    { question: "Scammers often move chat to:", options: ["Email", "WhatsApp/Telegram (Encrypted)", "Phone", "Mail"], answer: 1 },
+                    { question: "Reverse Image Search can help:", options: ["Find the real owner of photos", "Edit photos", "Delete photos", "Save photos"], answer: 0 },
+                    { question: "The 'Tax Fee' is:", options: ["Real", "A secondary scam to steal more", "Optional", "Small"], answer: 1 }
+                ]
+            },
+            {
+                id: "s4", category: "Scam Defense", title: "Quishing (QR Code Phishing)", level: "Modern", duration: "5 min", xp: 150,
+                content: [
+                    "Scenario: An email says '2FA Expired, Scan QR to reset'. Or a parking meter has a sticker over the real code.",
+                    "The Tech: AI generates credible-looking emails. QR codes bypass email text filters.",
+                    "The Defense: Check the URL preview before clicking. Inspect physical stickers.",
+                    "Action: Never scan a random QR code to 'login'."
+                ],
+                quizzes: [
+                    { question: "Quishing stands for:", options: ["Quick Fishing", "QR Phishing", "Quiet Shushing", "Quality Hishing"], answer: 1 },
+                    { question: "QR codes bypass:", options: ["Cameras", "Email text scanners/filters", "Humans", "Phones"], answer: 1 },
+                    { question: "Physical QR scams involve:", options: ["Painting", "Stickers over real codes", "Lasers", "Paper"], answer: 1 },
+                    { question: "Before scanning, you should:", options: ["Close eyes", "Check the source/URL preview", "Run", "Pay"], answer: 1 },
+                    { question: "Malicious QRs can lead to:", options: ["Candy", "Fake login sites/Malware", "Real sites", "Maps"], answer: 1 },
+                    { question: "Parking meters are common targets for:", options: ["Coins", "Sticker overlays", "Graffiti", "Cleaning"], answer: 1 },
+                    { question: "If an email asks to scan QR to login:", options: ["Do it", "Be highly suspicious", "Print it", "Delete it"], answer: 1 },
+                    { question: "Shortened URLs (bit.ly) in QRs are:", options: ["Safe", "Risky (hides destination)", "Fast", "Cool"], answer: 1 },
+                    { question: "Mobile browsers often hide:", options: ["Images", "Full URL bars", "Text", "Colors"], answer: 1 },
+                    { question: "To verify, navigate to the site:", options: ["Via the QR", "Manually/Via Bookmark", "Via Google", "Via Email"], answer: 1 }
+                ]
+            }
+        ];
+        const COMPARISON_GALLERY = [
+            {
+                id: 1, title: "Skin Texture & Pores", realUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=800&auto=format&fit=crop", aiType: "smooth", 
+                description: "Real skin has pores, imperfections, and varying translucency. AI skin often looks 'airbrushed', waxy, or like plastic."
+            },
+            {
+                id: 2, title: "Background Logic", realUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=800&auto=format&fit=crop", aiType: "warped", 
+                description: "Architectural Symmetry. In AI, straight lines in background buildings often warp, stairs lead to nowhere, or windows are uneven."
+            },
+            {
+                id: 3, title: "Hands & Interactions", realUrl: "https://images.unsplash.com/photo-1596495577886-d920f1fb7238?q=80&w=800&auto=format&fit=crop", aiType: "glitch",
+                description: "Topology failure. Hands holding objects often merge with the object, or fingers appear 'noodle-like' without distinct knuckles."
+            },
+            {
+                id: 4, title: "Text & Logos", realUrl: "https://images.unsplash.com/photo-1576153192396-180ecef2a715?q=80&w=800&auto=format&fit=crop", aiType: "text_fail",
+                description: "Gibberish. AI struggles to render coherent text on street signs or neon lights, often producing alien-like symbols."
+            },
+            {
+                id: 5, title: "Symmetry & Accessories", realUrl: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=800&auto=format&fit=crop", aiType: "symmetry",
+                description: "Accessories check. AI creates images holistically, often resulting in mismatched earrings or glasses frames that don't connect to ears."
+            },
+            {
+                id: 6, title: "Reflection Logic", realUrl: "https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=800&auto=format&fit=crop", aiType: "smooth",
+                description: "Environment mismatch. Reflections in eyes or water often show a different environment or light source than the main scene."
+            }
+        ];
+
+        // ==========================================
+        // 2. ICON SYSTEM
+        // ==========================================
+        const Icon = ({ path, size = 20, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {path}
+            </svg>
+        );
+
+        const Icons = {
+            Home: <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />,
+            Eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></>,
+            Search: <><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></>,
+            Shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
+            Terminal: <><polyline points="4 17 10 11 4 5" /><line x1="12" y1="19" x2="20" y2="19" /></>,
+            Book: <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />,
+            Award: <><circle cx="12" cy="8" r="7" /><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" /></>,
+            Upload: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>,
+            Check: <polyline points="20 6 9 17 4 12" />,
+            X: <><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></>,
+            Moon: <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />,
+            Sun: <><circle cx="12" cy="12" r="5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></>,
+            Zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />,
+            User: <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />,
+            Target: <><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>,
+            Lock: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
+            Alert: <><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></>,
+            Info: <circle cx="12" cy="12" r="10" />,
+            FileText: <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />,
+            List: <line x1="8" y1="6" x2="21" y2="6" />,
+            Mic: <><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></>,
+            MicOff: <line x1="1" y1="1" x2="23" y2="23" />,
+            Play: <polygon points="5 3 19 12 5 21 5 3" />,
+            Pause: <><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></>,
+            Square: <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />,
+            Trash2: <><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></>,
+            RefreshCw: <><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></>,
+            Activity: <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />,
+            ArrowRight: <><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></>,
+            Globe: <><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></>,
+            ExternalLink: <><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></>,
+            Wand: <><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h0"/><path d="M17.8 6.2 19 5"/><path d="M3 21l9-9"/><path d="M12.2 6.2 11 5"/></>
+        };
+
+        // ==========================================
+        // 3. UTILITY COMPONENTS
+        // ==========================================
+        
+        const Button = ({ children, onClick, variant = 'primary', className = "", disabled = false, icon }) => {
+            const baseStyle = "flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold transition-all duration-200 active:scale-95 shadow-sm";
+            const variants = {
+                primary: "bg-indigo-600 hover:bg-indigo-700 text-white shadow-none",
+                secondary: "bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700",
+                danger: "bg-red-500 hover:bg-red-600 text-white",
+                ghost: "bg-transparent hover:bg-slate-800 text-slate-400"
+            };
+            return (
+                <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}>
+                    {icon && <Icon path={icon} size={18} />}
+                    {children}
+                </button>
+            );
+        };
+
+        const Card = ({ children, className = "", title, icon }) => (
+            <div className={`glass rounded-2xl p-6 shadow-none ${className}`}>
+                {(title || icon) && (
+                    <div className="flex items-center gap-3 mb-4 border-b border-slate-700 pb-4">
+                        {icon && <div className="p-2 bg-indigo-900/30 text-indigo-400 rounded-lg"><Icon path={icon} /></div>}
+                        {title && <h3 className="font-bold text-lg text-slate-100">{title}</h3>}
+                    </div>
+                )}
+                {children}
+            </div>
+        );
+
+        const Badge = ({ children, color = 'blue' }) => {
+            const colors = {
+                blue: "bg-blue-900/50 text-blue-200",
+                green: "bg-green-900/50 text-green-200",
+                red: "bg-red-900/50 text-red-200",
+                purple: "bg-purple-900/50 text-purple-200",
+                orange: "bg-orange-900/50 text-orange-200"
+            };
+            return <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${colors[color]}`}>{children}</span>;
+        };
+
+        const ProgressBar = ({ value, max = 100, color = "bg-indigo-600" }) => (
+            <div className="w-full bg-slate-700 rounded-full h-2.5 overflow-hidden">
+                <div className={`h-2.5 rounded-full transition-all duration-1000 ${color}`} style={{ width: `${(value / max) * 100}%` }}></div>
+            </div>
+        );
+
+        const Modal = ({ isOpen, onClose, title, children }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-slate-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-700">
+                        <div className="p-6 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-slate-900 z-10">
+                            <h3 className="text-xl font-bold text-white">{title}</h3>
+                            <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-white"><Icon path={Icons.X} /></button>
+                        </div>
+                        <div className="p-6">{children}</div>
+                    </div>
+                </div>
+            );
+        };
+
+        const formatTime = (seconds) => {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        };
+
+        // ==========================================
+        // 4. CORE FEATURE MODULES
+        // ==========================================
+
+        // NEW: AI Prompt Optimizer
+        const PromptOptimizer = () => {
+            const [input, setInput] = useState("");
+            const [output, setOutput] = useState("");
+            const [isOptimizing, setIsOptimizing] = useState(false);
+
+            const handleOptimize = () => {
+                if(!input.trim()) return;
+                setIsOptimizing(true);
+                setTimeout(() => {
+                    let enhanced = `### Role & Objective\nAct as a world-class expert. Your task is to: ${input}\n\n### Context & Constraints\n- Be specific and avoid generic fluff.\n- Use a professional, authoritative tone.\n- If applicable, cite specific frameworks or methodologies.\n\n### Output Format\n- Use Markdown for structure.\n- Provide a step-by-step breakdown.\n- End with a summary of key takeaways.`;
+                    
+                    if (input.toLowerCase().includes("image") || input.toLowerCase().includes("picture") || input.toLowerCase().includes("photo")) {
+                        enhanced = `### Image Generation Prompt\n**Subject:** ${input}\n**Style:** Photorealistic, 8k resolution, cinematic lighting, highly detailed, sharp focus\n**Camera:** 85mm lens, f/1.8 aperture, ISO 100\n**Negative Prompt:** blurry, distorted, low quality, ugly, watermark, text, deformed hands, extra fingers`;
+                    } else if (input.toLowerCase().includes("code") || input.toLowerCase().includes("function") || input.toLowerCase().includes("script")) {
+                        enhanced = `### Coding Expert Role\n**Task:** ${input}\n\n**Requirements:**\n1. Write clean, efficient, and commented code.\n2. Handle edge cases and potential errors.\n3. Explain the logic briefly before the code block.\n4. Use modern best practices (e.g., ES6+ for JS, Python 3.10+).\n5. Provide a usage example.`;
+                    } else if (input.toLowerCase().includes("email") || input.toLowerCase().includes("letter")) {
+                        enhanced = `### Professional Communication\n**Task:** Write a ${input}\n\n**Tone:** Professional, concise, and empathetic.\n**Structure:**\n1. Clear Subject Line\n2. Professional Salutation\n3. The "Ask" (Directly state the purpose)\n4. Context/Reasoning\n5. Call to Action/Next Steps\n6. Professional Sign-off`;
+                    }
+
+                    setOutput(enhanced);
+                    setIsOptimizing(false);
+                }, 1000);
+            };
+
+            const copyToClipboard = () => {
+                navigator.clipboard.writeText(output);
+                alert("Prompt copied to clipboard!");
+            };
+
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div className="grid lg:grid-cols-2 gap-8">
+                        <div className="flex flex-col h-full">
+                            <h2 className="text-3xl font-black text-white mb-4">AI Prompt Optimizer</h2>
+                            <p className="text-slate-300 mb-6">
+                                Turn basic requests into high-performance engineering prompts. Better inputs equal better AI detection and generation results.
+                            </p>
+                            
+                            <div className="relative flex-grow min-h-[300px]">
+                                <textarea
+                                    className="w-full h-full p-6 rounded-2xl bg-slate-800 border border-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none resize-none font-mono text-sm leading-relaxed shadow-inner text-white placeholder-slate-500"
+                                    placeholder="Enter your basic request here (e.g., 'Write an email about project delays' or 'Generate a picture of a cat')..."
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                ></textarea>
+                            </div>
+                            
+                            <div className="mt-4">
+                                <Button onClick={handleOptimize} disabled={!input.trim() || isOptimizing} icon={Icons.Wand} className="w-full">
+                                    {isOptimizing ? "Optimizing..." : "Magic Optimize"}
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col h-full">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-xl font-bold text-white">Optimized Result</h3>
+                                {output && <button onClick={copyToClipboard} className="text-indigo-400 hover:text-white text-sm font-bold">Copy Output</button>}
+                            </div>
+                            <div className="flex-grow bg-slate-900 border border-slate-700 rounded-2xl p-6 overflow-y-auto min-h-[300px]">
+                                {output ? (
+                                    <pre className="whitespace-pre-wrap font-mono text-sm text-green-400 leading-relaxed">{output}</pre>
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-slate-600 opacity-50">
+                                        <Icon path={Icons.Terminal} size={48} />
+                                        <p className="mt-4 text-sm">Waiting for input...</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ActiveThreats = () => {
+            const [index, setIndex] = useState(0);
+
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setIndex((prev) => (prev + 1) % LIVE_THREATS.length);
+                }, 5000);
+                return () => clearInterval(interval);
+            }, []);
+
+            const currentThreat = LIVE_THREATS[index];
+
+            return (
+                <div className="bg-slate-900 border border-red-900/50 rounded-xl p-4 mb-6 flex items-center gap-4 relative overflow-hidden group">
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-600"></div>
+                    <div className="flex-shrink-0 flex items-center gap-2 text-red-500 font-bold uppercase tracking-wider text-xs">
+                        <span className="live-dot"></span>
+                        Live Threats
+                    </div>
+                    <div className="flex-1 h-6 relative overflow-hidden">
+                        <a 
+                            href={currentThreat.url} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            key={index} 
+                            className="animate-[scanline_0.5s_ease-out] absolute inset-0 flex items-center text-slate-300 text-sm font-mono hover:text-red-400 transition-colors"
+                        >
+                            <span className="text-red-400 mr-2">[{currentThreat.type}]</span> 
+                            {currentThreat.text}
+                            <Icon path={Icons.ExternalLink} size={12} className="ml-2 opacity-50" />
+                        </a>
+                    </div>
+                </div>
+            );
+        };
+
+        const VoiceForensics = () => {
+            const [isRecording, setIsRecording] = useState(false);
+            const [recordingTime, setRecordingTime] = useState(0);
+            const [recordings, setRecordings] = useState([]);
+            const [currentPlayback, setCurrentPlayback] = useState(null);
+            const [audioLevels, setAudioLevels] = useState(new Array(20).fill(10));
+            const [analyzingId, setAnalyzingId] = useState(null);
+            const [showGuide, setShowGuide] = useState(false);
+            
+            const mediaRecorderRef = useRef(null);
+            const audioContextRef = useRef(null);
+            const analyserRef = useRef(null);
+            const timerRef = useRef(null);
+            const chunksRef = useRef([]);
+            const animationFrameRef = useRef(null);
+            const audioElementsRef = useRef({});
+
+            useEffect(() => {
+                return () => {
+                    cancelAnimationFrame(animationFrameRef.current);
+                    clearInterval(timerRef.current);
+                    if (audioContextRef.current) audioContextRef.current.close();
+                };
+            }, []);
+
+            const startRecording = async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+                    analyserRef.current = audioContextRef.current.createAnalyser();
+                    analyserRef.current.fftSize = 64;
+                    const source = audioContextRef.current.createMediaStreamSource(stream);
+                    source.connect(analyserRef.current);
+
+                    mediaRecorderRef.current = new MediaRecorder(stream);
+                    chunksRef.current = [];
+
+                    mediaRecorderRef.current.ondataavailable = (e) => {
+                        if (e.data.size > 0) chunksRef.current.push(e.data);
+                    };
+
+                    mediaRecorderRef.current.onstop = () => {
+                        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+                        const url = URL.createObjectURL(blob);
+                        const newRecording = {
+                            id: Date.now(),
+                            url,
+                            date: new Date().toLocaleString(),
+                            duration: recordingTime,
+                            name: `Audio Evidence ${recordings.length + 1}`,
+                            analysis: null
+                        };
+                        setRecordings(prev => [newRecording, ...prev]);
+                        setRecordingTime(0);
+                        
+                        stream.getTracks().forEach(track => track.stop());
+                        cancelAnimationFrame(animationFrameRef.current);
+                        setAudioLevels(new Array(20).fill(10));
+                    };
+
+                    mediaRecorderRef.current.start();
+                    setIsRecording(true);
+                    
+                    timerRef.current = setInterval(() => {
+                        setRecordingTime(prev => prev + 1);
+                    }, 1000);
+
+                    const updateVisualizer = () => {
+                        if (!analyserRef.current) return;
+                        const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+                        analyserRef.current.getByteFrequencyData(dataArray);
+                        
+                        const step = Math.floor(dataArray.length / 20);
+                        const newLevels = [];
+                        for(let i=0; i<20; i++) {
+                            const val = dataArray[i * step];
+                            const height = Math.max(10, (val / 255) * 100);
+                            newLevels.push(height);
+                        }
+                        setAudioLevels(newLevels);
+                        animationFrameRef.current = requestAnimationFrame(updateVisualizer);
+                    };
+                    updateVisualizer();
+
+                } catch (err) {
+                    console.error("Error accessing microphone:", err);
+                    alert("Could not access microphone. Please ensure permissions are granted.");
+                }
+            };
+
+            const stopRecording = () => {
+                if (mediaRecorderRef.current && isRecording) {
+                    mediaRecorderRef.current.stop();
+                    setIsRecording(false);
+                    clearInterval(timerRef.current);
+                }
+            };
+
+            const togglePlayback = (recording) => {
+                if (currentPlayback === recording.id) {
+                    const audio = audioElementsRef.current[recording.id];
+                    if (audio) {
+                        audio.pause();
+                        setCurrentPlayback(null);
+                    }
+                    return;
+                }
+
+                if (currentPlayback) {
+                    const prevAudio = audioElementsRef.current[currentPlayback];
+                    if (prevAudio) {
+                        prevAudio.pause();
+                        prevAudio.currentTime = 0;
+                    }
+                }
+
+                if (!audioElementsRef.current[recording.id]) {
+                    const audio = new Audio(recording.url);
+                    audio.onended = () => setCurrentPlayback(null);
+                    audioElementsRef.current[recording.id] = audio;
+                }
+                
+                audioElementsRef.current[recording.id].play();
+                setCurrentPlayback(recording.id);
+            };
+
+            const analyzeRecording = (id) => {
+                setAnalyzingId(id);
+                // Simulate AI analysis delay
+                setTimeout(() => {
+                    setRecordings(prev => prev.map(rec => {
+                        if (rec.id === id) {
+                            const isFake = Math.random() > 0.5;
+                            return {
+                                ...rec,
+                                analysis: {
+                                    score: isFake ? Math.floor(Math.random() * 30 + 70) : Math.floor(Math.random() * 20),
+                                    label: isFake ? "Synthetic Signature Detected" : "Natural Voice Patterns",
+                                    details: isFake ? "Lack of breathing artifacts, monotonic frequency distribution." : "Natural frequency variance and breath pauses detected."
+                                }
+                            };
+                        }
+                        return rec;
+                    }));
+                    setAnalyzingId(null);
+                }, 2000);
+            };
+
+            const deleteRecording = (id) => {
+                if (currentPlayback === id) {
+                    audioElementsRef.current[id].pause();
+                    setCurrentPlayback(null);
+                }
+                setRecordings(prev => prev.filter(r => r.id !== id));
+                delete audioElementsRef.current[id];
+            };
+
+            const handleFileUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const url = URL.createObjectURL(file);
+                    const newRecording = {
+                        id: Date.now(),
+                        url,
+                        date: new Date().toLocaleString(),
+                        duration: 0, 
+                        name: file.name,
+                        analysis: null
+                    };
+                    setRecordings(prev => [newRecording, ...prev]);
+                }
+            };
+
+            return (
+                <div className="grid lg:grid-cols-2 gap-8 animate-fade-in h-[calc(100vh-140px)]">
+                    {/* Recorder Section */}
+                    <div className="flex flex-col h-full bg-slate-800 rounded-3xl shadow-lg border border-slate-700 overflow-hidden relative">
+                         <div className={`absolute inset-0 transition-opacity duration-500 pointer-events-none ${isRecording ? 'opacity-20 bg-red-500' : 'opacity-0'}`}></div>
+                         
+                         <div className="flex-1 flex flex-col items-center justify-center p-8 relative z-10">
+                            <div className="absolute top-6 right-6">
+                                <Button variant="secondary" className="text-xs" icon={Icons.Book} onClick={() => setShowGuide(true)}>Audio Signatures Guide</Button>
+                            </div>
+
+                            <div className="text-6xl font-mono text-slate-200 font-bold mb-8 tracking-wider">
+                                {formatTime(recordingTime)}
+                            </div>
+
+                            {/* Visualizer */}
+                            <div className="flex items-end justify-center gap-1 h-24 w-full max-w-sm mb-12">
+                                {audioLevels.map((level, idx) => (
+                                    <div 
+                                        key={idx} 
+                                        className={`w-3 rounded-t-full transition-all duration-75 ${isRecording ? 'bg-red-500' : 'bg-slate-600'}`}
+                                        style={{ height: `${level}%` }}
+                                    ></div>
+                                ))}
+                            </div>
+
+                            <div className="relative">
+                                {isRecording && <div className="pulse-ring"></div>}
+                                <button 
+                                    onClick={isRecording ? stopRecording : startRecording}
+                                    className={`w-24 h-24 rounded-full flex items-center justify-center shadow-xl transition-all transform hover:scale-105 active:scale-95 focus:outline-none z-20 ${
+                                        isRecording 
+                                            ? 'bg-white border-4 border-red-500 text-red-500' 
+                                            : 'bg-red-500 text-white border-4 border-red-100/10 hover:shadow-red-500/30'
+                                    }`}
+                                >
+                                    <Icon path={isRecording ? Icons.Square : Icons.Mic} size={40} />
+                                </button>
+                            </div>
+                            
+                            <p className="mt-8 text-slate-400 font-medium tracking-wide uppercase text-sm">
+                                {isRecording ? "Listening..." : "Tap to Record Evidence"}
+                            </p>
+                            
+                            <div className="mt-8">
+                                <label className="cursor-pointer text-indigo-500 hover:text-indigo-400 font-bold text-sm flex items-center gap-2">
+                                    <input type="file" accept="audio/*" onChange={handleFileUpload} className="hidden" />
+                                    <Icon path={Icons.Upload} size={16} /> Upload Audio File
+                                </label>
+                            </div>
+                         </div>
+                    </div>
+
+                    {/* List Section */}
+                    <div className="flex flex-col h-full space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                <Icon path={Icons.List} /> Evidence Locker
+                            </h3>
+                            <span className="text-sm font-bold text-slate-400">{recordings.length} Files</span>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                            {recordings.length === 0 ? (
+                                <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-3 border-2 border-dashed border-slate-700 rounded-2xl">
+                                    <Icon path={Icons.MicOff} size={48} className="opacity-50" />
+                                    <span>No audio evidence collected yet.</span>
+                                </div>
+                            ) : (
+                                recordings.map(rec => (
+                                    <div key={rec.id} className="bg-slate-800 border border-slate-700 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all">
+                                        <div className="flex items-center gap-4 mb-3">
+                                            <button 
+                                                onClick={() => togglePlayback(rec)}
+                                                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${
+                                                    currentPlayback === rec.id ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-indigo-900/30 hover:text-indigo-400'
+                                                }`}
+                                            >
+                                                <Icon path={currentPlayback === rec.id ? Icons.Pause : Icons.Play} size={20} fill={currentPlayback === rec.id ? "currentColor" : "currentColor"} />
+                                            </button>
+                                            
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-bold text-slate-200 truncate">{rec.name}</div>
+                                                <div className="text-xs text-slate-400 flex items-center gap-2 mt-1">
+                                                    <span>{rec.date}</span>
+                                                    {rec.duration > 0 && <span>• {formatTime(rec.duration)}</span>}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                <Button 
+                                                    variant="secondary" 
+                                                    className="!px-3 !py-2 !rounded-lg"
+                                                    onClick={() => analyzeRecording(rec.id)}
+                                                    disabled={!!rec.analysis || analyzingId === rec.id}
+                                                >
+                                                    {analyzingId === rec.id ? <div className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full"></div> : <Icon path={Icons.Activity} size={16} />}
+                                                </Button>
+                                                <button 
+                                                    onClick={() => deleteRecording(rec.id)}
+                                                    className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-900/20 rounded-lg transition-colors"
+                                                >
+                                                    <Icon path={Icons.Trash2} size={18} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Analysis Result */}
+                                        {rec.analysis && (
+                                            <div className={`mt-3 p-3 rounded-xl border text-sm ${rec.analysis.score > 50 ? 'bg-red-900/10 border-red-900/30' : 'bg-green-900/10 border-green-900/30'}`}>
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className={`font-bold ${rec.analysis.score > 50 ? 'text-red-400' : 'text-green-400'}`}>
+                                                        {rec.analysis.label} ({rec.analysis.score}%)
+                                                    </span>
+                                                </div>
+                                                <p className="text-slate-400 text-xs">{rec.analysis.details}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    <Modal isOpen={showGuide} onClose={() => setShowGuide(false)} title="Audio Signatures Guide">
+                        <div className="space-y-6">
+                            <div className="grid gap-4">
+                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                    <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Icon path={Icons.Mic} size={16} /> The Zero-Breath Artifact</h4>
+                                    <p className="text-sm text-slate-400">Human speakers naturally inhale every 4-8 seconds. AI models often generate continuous speech streams for 30+ seconds without a single intake breath. Look for unnatural sustain.</p>
+                                </div>
+                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                    <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Icon path={Icons.Zap} size={16} /> Metallic Shimmer</h4>
+                                    <p className="text-sm text-slate-400">Low-fidelity vocoders leave a high-frequency "buzz" or metallic ringing, especially on S/F sounds (sibilance) or at the very end of sentences.</p>
+                                </div>
+                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                    <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Icon path={Icons.Activity} size={16} /> Perfect Pitch Stability</h4>
+                                    <p className="text-sm text-slate-400">Human voices have micro-tremors in pitch. AI voices often hold a pitch perfectly steady, sounding "flat" or overly processed, lacking emotional micro-expressions.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </Modal>
+                </div>
+            );
+        };
+
+        // --- IMAGE INSPECTOR 3.0 (ORIGINAL IMPLEMENTATION RESTORED) ---
+        const VisualForensics = () => {
+            const [mode, setMode] = useState('compare');
+            const [uploadedImage, setUploadedImage] = useState(null);
+            const [checklist, setChecklist] = useState({
+                fingers: false, eyes: false, text: false, texture: false, physics: false
+            });
+            const [showHeatmap, setShowHeatmap] = useState(false);
+
+            const handleImageUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => setUploadedImage(e.target.result);
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const risk = useMemo(() => {
+                const count = Object.values(checklist).filter(Boolean).length;
+                if (count >= 4) return { level: "CRITICAL", color: "red", score: 95 };
+                if (count >= 2) return { level: "SUSPICIOUS", color: "orange", score: 60 };
+                return { level: "LIKELY SAFE", color: "green", score: 10 };
+            }, [checklist]);
+
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div>
+                            <h2 className="text-3xl font-black text-white">Visual Forensics Lab</h2>
+                            <p className="text-slate-400 mt-1">Analyze imagery for synthetic artifacts using side-by-side comparison or direct upload.</p>
+                        </div>
+                        <div className="flex bg-slate-800 p-1 rounded-xl">
+                            <button onClick={() => setMode('compare')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'compare' ? 'bg-slate-700 shadow-sm text-white' : 'text-slate-500'}`}>Gallery</button>
+                            <button onClick={() => setMode('upload')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${mode === 'upload' ? 'bg-slate-700 shadow-sm text-white' : 'text-slate-500'}`}>Inspector Tool</button>
+                        </div>
+                    </div>
+
+                    {mode === 'compare' && (
+                        <div className="grid lg:grid-cols-2 gap-8">
+                            {COMPARISON_GALLERY.map((item) => (
+                                <Card key={item.id} className="overflow-hidden">
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        <div className="relative group rounded-xl overflow-hidden cursor-crosshair">
+                                            <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded shadow-lg z-10">AUTHENTIC</div>
+                                            <img src={item.realUrl} alt="Real" className="w-full h-48 object-cover" />
+                                        </div>
+                                        <div className="relative group rounded-xl overflow-hidden cursor-crosshair">
+                                            <div className="absolute top-2 left-2 bg-purple-500 text-white text-xs font-bold px-2 py-1 rounded shadow-lg z-10">AI SIMULATION</div>
+                                            <img 
+                                                src={item.realUrl} 
+                                                alt="AI Sim" 
+                                                className={`w-full h-48 object-cover ${item.aiType === 'smooth' ? 'blur-[1px] contrast-125 brightness-110' : item.aiType === 'warped' ? 'scale-110 rotate-1 blur-[2px]' : 'grayscale-[50%] contrast-150'}`} 
+                                                style={{ filter: item.aiType === 'smooth' ? 'saturate(1.5) blur(0.5px)' : '' }}
+                                            />
+                                            {item.aiType === 'glitch' && (
+                                                <div className="absolute inset-0 pointer-events-none opacity-50 bg-[url('https://www.transparenttextures.com/patterns/diagmonds-light.png')]"></div>
+                                            )}
+                                            {item.aiType === 'text_fail' && (
+                                                <div className="absolute inset-0 flex items-center justify-center opacity-70">
+                                                    <span className="text-white font-serif text-4xl rotate-12 blur-sm">₲ⱧØ₴₮</span>
+                                                </div>
+                                            )}
+                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white p-4 text-center">
+                                                <p className="font-bold text-sm mb-2">Forensic Analysis</p>
+                                                <p className="text-xs">{item.description}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 pt-4 border-t border-slate-700">
+                                        <h3 className="font-bold text-lg text-slate-100">{item.title}</h3>
+                                        <p className="text-sm text-slate-400 mt-1">Hover over the AI image to reveal forensic analysis notes.</p>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+
+                    {mode === 'upload' && (
+                        <div className="grid lg:grid-cols-3 gap-8">
+                            <div className="lg:col-span-2">
+                                <div className="border-2 border-dashed border-slate-600 rounded-2xl h-[500px] flex flex-col items-center justify-center bg-slate-800/50 relative overflow-hidden group">
+                                    {uploadedImage ? (
+                                        <>
+                                            <img src={uploadedImage} alt="Analysis Target" className="max-w-full max-h-full object-contain relative z-10" />
+                                            {showHeatmap && <div className="absolute inset-0 z-20 mix-blend-overlay bg-gradient-to-tr from-red-500/50 via-transparent to-blue-500/50 pointer-events-none animate-pulse"></div>}
+                                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/20 to-transparent h-1 w-full animate-[scanline_2s_linear_infinite] pointer-events-none z-30"></div>
+                                            <div className="absolute top-4 right-4 z-40 flex gap-2">
+                                                 <Button variant="secondary" onClick={() => setShowHeatmap(!showHeatmap)} icon={Icons.Eye}>
+                                                    {showHeatmap ? "Hide Heatmap" : "Show ELA Simulation"}
+                                                 </Button>
+                                                <Button variant="danger" onClick={() => setUploadedImage(null)} icon={Icons.X}>Clear</Button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="text-center p-8">
+                                            <div className="w-20 h-20 bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-400">
+                                                <Icon path={Icons.Upload} size={40} />
+                                            </div>
+                                            <h3 className="text-xl font-bold mb-2 text-white">Upload Image for Inspection</h3>
+                                            <p className="text-slate-400 mb-6 max-w-sm mx-auto">
+                                                Supports JPG, PNG, WEBP. Images are processed locally in your browser for privacy.
+                                            </p>
+                                            <label className="cursor-pointer">
+                                                <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                                                <span className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-indigo-500/30">
+                                                    Select File
+                                                </span>
+                                            </label>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="lg:col-span-1 space-y-6">
+                                <Card title="Forensic Checklist" icon={Icons.Target}>
+                                    <div className="space-y-4">
+                                        {[
+                                            { id: 'fingers', label: 'Distorted Hands', desc: 'Count fingers. Look for melding.' },
+                                            { id: 'eyes', label: 'Asymmetrical Eyes', desc: 'Check pupil shape and reflection.' },
+                                            { id: 'text', label: 'Gibberish Text', desc: 'Alien symbols in background.' },
+                                            { id: 'texture', label: 'Plastic Skin', desc: 'Lack of pores/imperfections.' },
+                                            { id: 'physics', label: 'Physics Violations', desc: 'Impossible shadows/gravity.' }
+                                        ].map(item => (
+                                            <label key={item.id} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${checklist[item.id] ? 'bg-red-900/20 border-red-800' : 'bg-slate-800 border-slate-700'}`}>
+                                                <div className="pt-0.5">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                        checked={checklist[item.id]}
+                                                        onChange={() => setChecklist(prev => ({...prev, [item.id]: !prev[item.id]}))}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <span className={`font-bold text-sm block ${checklist[item.id] ? 'text-red-300' : 'text-slate-200'}`}>{item.label}</span>
+                                                    <span className="text-xs text-slate-400">{item.desc}</span>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </Card>
+                                {uploadedImage && (
+                                    <Card className={`text-center border-t-4 ${risk.score > 50 ? 'border-t-red-500' : 'border-t-green-500'}`}>
+                                        <div className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Analysis Result</div>
+                                        <div className={`text-4xl font-black mb-2 ${risk.score > 50 ? 'text-red-600' : 'text-green-600'}`}>{risk.level}</div>
+                                        <p className="text-sm text-slate-500">Based on manual forensic inspection.</p>
+                                    </Card>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- TEXT FORENSICS 4.0 (ORIGINAL IMPLEMENTATION RESTORED) ---
+        const TextForensics = () => {
+            const [text, setText] = useState("");
+            const [result, setResult] = useState(null);
+            const [isScanning, setIsScanning] = useState(false);
+            const [showCompare, setShowCompare] = useState(false);
+
+            // Advanced Highlight Renderer
+            const HighlightedText = ({ content, analysis }) => {
+                if (!analysis) return <div className="whitespace-pre-wrap">{content}</div>;
+
+                const words = content.split(/(\s+)/);
+                return (
+                    <div className="whitespace-pre-wrap leading-relaxed text-slate-200">
+                        {words.map((word, i) => {
+                            const cleanWord = word.toLowerCase().replace(/[^\w]/g, '');
+                            let highlightClass = "";
+                            let tooltipText = "";
+
+                            for (const [category, data] of Object.entries(AI_VOCABULARY)) {
+                                if (data.words.includes(cleanWord)) {
+                                    highlightClass = `text-highlight-${category}`;
+                                    tooltipText = `${data.desc}: ${data.reason}`;
+                                    break;
+                                }
+                            }
+
+                            if (highlightClass) {
+                                return (
+                                    <span key={i} className={`tooltip ${highlightClass} relative`}>
+                                        {word}
+                                        <span className="tooltiptext">{tooltipText}</span>
+                                    </span>
+                                );
+                            }
+                            return <span key={i}>{word}</span>;
+                        })}
+                    </div>
+                );
+            };
+
+            const analyze = () => {
+                if(text.length < 50) return;
+                setIsScanning(true);
+                
+                setTimeout(() => {
+                    const cleanWords = text.toLowerCase().match(/\b(\w+)\b/g) || [];
+                    const sentences = text.split(/[.!?]+/).filter(Boolean);
+                    
+                    // Stats
+                    const avgLen = sentences.reduce((acc, val) => acc + val.split(' ').length, 0) / sentences.length;
+                    const lengths = sentences.map(s => s.split(' ').length);
+                    const variance = lengths.reduce((a,b)=>a+Math.pow(b-avgLen,2),0) / lengths.length;
+                    const burstiness = Math.sqrt(variance);
+
+                    // Buzzword Count
+                    let buzzCount = 0;
+                    Object.values(AI_VOCABULARY).forEach(cat => {
+                        cat.words.forEach(w => {
+                            if (cleanWords.includes(w)) buzzCount++;
+                        });
+                    });
+
+                    // Score Logic
+                    let aiScore = 0;
+                    if (burstiness < 6) aiScore += 40; // Low burstiness = Robotic
+                    if (buzzCount > 2) aiScore += 30; 
+                    if (avgLen > 15 && avgLen < 25) aiScore += 20;
+
+                    setResult({
+                        score: Math.min(aiScore, 99),
+                        burstiness: burstiness.toFixed(1),
+                        avgLen: avgLen.toFixed(1),
+                        buzzCount
+                    });
+                    setIsScanning(false);
+                }, 1500);
+            };
+
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div className="grid lg:grid-cols-2 gap-8">
+                        <div className="flex flex-col h-full">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-3xl font-black text-white">Deep Text Scanner</h2>
+                                <Button variant="secondary" className="text-xs" icon={Icons.Book} onClick={() => setShowCompare(true)}>View Style Comparison</Button>
+                            </div>
+                            <p className="text-slate-300 mb-6">
+                                Paste text to analyze semantic patterns. We detect <span className="font-bold text-indigo-500">low entropy</span> (predictability) and specific vocabulary clusters preferred by LLMs.
+                            </p>
+                            
+                            <div className="relative flex-grow min-h-[400px]">
+                                {result ? (
+                                    <div className="w-full h-full p-6 rounded-2xl bg-slate-800 border border-slate-700 shadow-inner overflow-y-auto font-mono text-sm">
+                                        <HighlightedText content={text} analysis={result} />
+                                    </div>
+                                ) : (
+                                    <textarea
+                                        className="w-full h-full p-6 rounded-2xl bg-slate-800 border border-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none resize-none font-mono text-sm leading-relaxed shadow-inner text-white placeholder-slate-500"
+                                        placeholder="Paste suspicious email or essay text here..."
+                                        value={text}
+                                        onChange={(e) => setText(e.target.value)}
+                                    ></textarea>
+                                )}
+                                {isScanning && <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center rounded-2xl backdrop-blur-sm z-10"><div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div></div>}
+                            </div>
+                            
+                            <div className="mt-4 flex gap-4">
+                                <Button onClick={analyze} disabled={text.length < 50 || isScanning} icon={Icons.Search} className="flex-1">
+                                    {isScanning ? "Processing..." : "Run Deep Scan"}
+                                </Button>
+                                {result && <Button variant="secondary" onClick={() => setResult(null)} icon={Icons.RefreshCw}>Reset</Button>}
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            {result ? (
+                                <div className="space-y-6 animate-fade-in">
+                                    <Card className="text-center relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+                                        <div className="relative z-10">
+                                            <div className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-2">Synthetic Probability</div>
+                                            <div className={`text-6xl font-black mb-2 ${result.score > 70 ? 'text-purple-400' : result.score > 40 ? 'text-yellow-400' : 'text-green-400'}`}>
+                                                {result.score}%
+                                            </div>
+                                            <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-sm font-medium">
+                                                {result.score > 70 ? "High Likelihood" : result.score > 40 ? "Indeterminate" : "Likely Human"}
+                                            </div>
+                                        </div>
+                                    </Card>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <Card title="Burstiness" className="text-center">
+                                            <div className="text-2xl font-bold mb-1 text-white">{result.burstiness}</div>
+                                            <div className="text-[10px] text-slate-500 uppercase">Variance Score</div>
+                                            <div className={`mt-2 h-1 w-full rounded-full ${result.burstiness < 6 ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                            <p className="text-[10px] mt-1 text-slate-400">{result.burstiness < 6 ? "Robotic / Uniform" : "Human / Chaotic"}</p>
+                                        </Card>
+                                        <Card title="Vocabulary" className="text-center">
+                                            <div className="text-2xl font-bold mb-1 text-white">{result.buzzCount}</div>
+                                            <div className="text-[10px] text-slate-500 uppercase">Buzzwords Found</div>
+                                            <div className="mt-2 h-1 w-full rounded-full bg-blue-500"></div>
+                                        </Card>
+                                    </div>
+
+                                    <Card title="Vocabulary Legend">
+                                        <div className="space-y-2 text-sm text-slate-300">
+                                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-yellow-400 rounded-full"></div> <span>Hype (Marketing)</span></div>
+                                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-indigo-500 rounded-full"></div> <span>Academic (Formal)</span></div>
+                                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-sky-500 rounded-full"></div> <span>Corporate (Safe)</span></div>
+                                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-500 rounded-full"></div> <span>Filler (Structural)</span></div>
+                                        </div>
+                                    </Card>
+                                </div>
+                            ) : (
+                                <Card className="h-full flex flex-col items-center justify-center text-center p-12 opacity-50 border-dashed">
+                                    <div className="mb-4 text-slate-600"><Icon path={Icons.Terminal} size={64} /></div>
+                                    <h3 className="text-lg font-bold text-slate-400">Analysis Pending</h3>
+                                    <p className="text-sm text-slate-400">Metrics will appear here after scan.</p>
+                                </Card>
+                            )}
+                        </div>
+                    </div>
+
+                    <Modal isOpen={showCompare} onClose={() => setShowCompare(false)} title="Human vs. AI Writing Style">
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="bg-slate-800 p-4 rounded-xl border border-indigo-500/30">
+                                <Badge color="purple">AI Generated</Badge>
+                                <p className="mt-3 text-sm text-slate-300 font-mono leading-relaxed">
+                                    "The sunset painted the sky in a <span className="bg-indigo-900/50 text-indigo-300">myriad</span> of colors, a <span className="bg-indigo-900/50 text-indigo-300">testament</span> to nature's beauty. Furthermore, the clouds danced across the horizon in a seamless display of light and shadow. In conclusion, it was a breathtaking moment that underscored the importance of pausing to appreciate the world."
+                                </p>
+                                <p className="mt-3 text-xs text-slate-500">Analysis: Heavy use of "myriad", "testament", "furthermore", "in conclusion". Structure is too perfect.</p>
+                            </div>
+                            <div className="bg-slate-800 p-4 rounded-xl border border-green-500/30">
+                                <Badge color="green">Human Written</Badge>
+                                <p className="mt-3 text-sm text-slate-300 font-mono leading-relaxed">
+                                    "The sky turned this crazy purple color tonight. Honestly, it reminded me of that bruised plum color you see in old paintings. I just stood there for like ten minutes watching the light fade until it got too cold."
+                                </p>
+                                <p className="mt-3 text-xs text-slate-500">Analysis: Specific imagery ("bruised plum"), casual sentence fragments, personal opinion ("Honestly"), variable rhythm.</p>
+                            </div>
+                        </div>
+                    </Modal>
+                </div>
+            );
+        };
+const LandingPage = ({ onStart }) => {
+            // Generate Stars
+            const stars = useMemo(() => {
+                return [...Array(60)].map((_, i) => ({
+                    id: i,
+                    top: `${Math.random() * 100}%`,
+                    left: `${Math.random() * 100}%`,
+                    size: `${Math.random() * 3 + 1}px`,
+                    delay: `${Math.random() * 5}s`,
+                    duration: `${Math.random() * 3 + 2}s`
+                }));
+            }, []);
+
+            // Generate "Matrix" Data Particles
+            const particles = useMemo(() => {
+                return [...Array(20)].map((_, i) => ({
+                    id: `p-${i}`,
+                    left: `${Math.random() * 100}%`,
+                    content: Math.random() > 0.5 ? '1' : '0',
+                    duration: `${Math.random() * 10 + 5}s`,
+                    delay: `${Math.random() * 5}s`
+                }));
+            }, []);
+
+            return (
+                <div className="min-h-screen relative overflow-x-hidden overflow-y-auto font-sans">
+                    {/* --- BACKGROUND LAYERS --- */}
+                    <div className="galaxy-bg"></div>
+                    <div className="cyber-grid"></div>
+                    
+                    {/* Stars */}
+                    {stars.map(star => (
+                        <div key={star.id} className="star z-0" 
+                            style={{ 
+                                top: star.top, left: star.left, width: star.size, height: star.size, 
+                                animationDelay: star.delay, animationDuration: star.duration
+                            }} 
+                        />
+                    ))}
+
+                    {/* Floating Data Particles */}
+                    {particles.map(p => (
+                        <div key={p.id} className="data-particle z-0" 
+                            style={{ 
+                                left: p.left, animationDuration: p.duration, animationDelay: p.delay 
+                            }}
+                        >
+                            {p.content}
+                        </div>
+                    ))}
+
+                    {/* --- MAIN CONTENT CONTAINER --- */}
+                    <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-6 py-12 md:py-20">
+                        <div className="max-w-6xl w-full flex flex-col items-center text-center space-y-12 animate-fade-in">
+                            
+                            {/* Floating Logo */}
+                            <div className="animate-float">
+                                <div className="inline-flex items-center justify-center p-8 rounded-full bg-indigo-500/10 backdrop-blur-xl border border-indigo-400/30 shadow-[0_0_100px_rgba(79,70,229,0.2)]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                        <path d="M12 8v4"/>
+                                        <path d="M12 16h.01"/>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            {/* Title */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-center gap-3">
+                                    <div className="h-[1px] w-12 bg-indigo-500/50"></div>
+                                    <span className="text-indigo-400 font-mono font-bold tracking-[0.3em] text-xs uppercase glow">System Online</span>
+                                    <div className="h-[1px] w-12 bg-indigo-500/50"></div>
+                                </div>
+                                <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter drop-shadow-2xl">
+                                    AI SENTINEL
+                                    <span className="block text-xl md:text-3xl mt-4 font-light text-indigo-200 tracking-widest opacity-80">ENTERPRISE EDITION</span>
+                                </h1>
+                            </div>
+
+                            {/* Intro Text */}
+                            <div className="glass-panel p-8 md:p-10 rounded-3xl border-t border-white/10 bg-gradient-to-b from-slate-900/50 to-indigo-900/10 max-w-4xl mx-auto shadow-2xl backdrop-blur-xl">
+                                <p className="text-lg md:text-2xl text-indigo-50 leading-relaxed font-light font-sans">
+                                    "We live in an era where a mother's voice can be synthesized in seconds, and a stranger's face can be worn like a mask. The digital universe is expanding, but so are the shadows where truth hides."
+                                </p>
+                                <div className="h-px w-full bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent my-8"></div>
+                                <p className="text-lg md:text-xl text-slate-300 leading-relaxed">
+                                    From protecting our grandparents from phantom calls to guiding the youth through a maze of algorithms, our mission is simple: <span className="text-white font-bold drop-shadow-md">To ensure that in a world of artificial intelligence, human connection remains authentic.</span>
+                                </p>
+                            </div>
+
+                            {/* Feature Overview Board */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-5xl">
+                                {[
+{ title: "Visual Forensics", desc: "Detect deepfake anomalies in facial structure and lighting.", icon: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></> },                                    { title: "Voice Analysis", desc: "Identify synthetic audio patterns and robotic artifacts.", icon: <><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></> },
+                                    { title: "Text Scanner", desc: "Analyze writing for LLM vocabulary and low entropy.", icon: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></> },
+                                    { title: "Scam Defense", desc: "Learn strategies to defeat social engineering attacks.", icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/> }
+                                ].map((feature, i) => (
+                                    <div key={i} className="feature-card p-6 rounded-2xl flex flex-col items-center text-center">
+                                        <div className="p-3 bg-indigo-500/20 rounded-xl mb-3 text-indigo-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{feature.icon}</svg>
+                                        </div>
+                                        <h3 className="font-bold text-white mb-1">{feature.title}</h3>
+                                        <p className="text-xs text-slate-400">{feature.desc}</p>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Action Area */}
+                            <div className="pt-6 pb-12">
+                                <button 
+                                    onClick={onStart}
+                                    className="group relative px-12 py-5 bg-white/5 hover:bg-indigo-600/20 backdrop-blur-md border border-white/10 hover:border-indigo-400/50 rounded-full font-bold text-lg text-white transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(99,102,241,0.4)] flex items-center gap-3 overflow-hidden"
+                                >
+                                    <span className="relative z-10 tracking-widest">INITIALIZE SYSTEM</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform relative z-10 text-indigo-400">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
+                                    </svg>
+                                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12"></div>
+                                </button>
+                            </div>
+
+                            {/* Credits */}
+                            <div className="mt-auto pt-8 flex flex-col items-center">
+                                <div className="inline-block px-8 py-4 rounded-2xl glass-panel border-white/5 bg-black/20">
+                                    <p className="text-[10px] text-indigo-300 font-bold tracking-[0.2em] uppercase mb-2">System Architect</p>
+                                    <p className="text-white text-base font-bold tracking-wide">Nhat Nam Do</p>
+                                    <p className="text-slate-400 text-xs mt-1 font-mono hover:text-indigo-400 transition-colors cursor-pointer">namdok2k3@gmail.com</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        // --- DASHBOARD (Expanded with Live Threats) ---
+        const Dashboard = ({ userXP, userLevel, setView }) => {
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div className="relative overflow-hidden rounded-3xl bg-indigo-600 text-white p-8 md:p-12 shadow-xl shadow-none">
+                        <div className="relative z-10 max-w-2xl">
+                            <Badge color="purple">Enterprise Edition v5.3</Badge>
+                            <h1 className="text-4xl md:text-6xl font-black mt-4 mb-6 leading-tight">
+                                Artificial Intelligence <br/>Defense Systems
+                            </h1>
+                            <p className="text-indigo-100 text-lg md:text-xl mb-8 leading-relaxed">
+                                Elite-grade tools for detecting synthetic media, analyzing linguistic patterns, and protecting institutional integrity.
+                            </p>
+                            <div className="flex flex-wrap gap-4">
+                                <Button variant="secondary" onClick={() => setView('visuals')} icon={Icons.Eye}>Launch Visual Inspector</Button>
+                                <Button variant="secondary" onClick={() => setView('voice')} icon={Icons.Mic}>Open Voice Lab</Button>
+                                <Button variant="secondary" onClick={() => setView('text')} icon={Icons.Search}>Deep Text Scan</Button>
+                                <Button variant="secondary" onClick={() => setView('learn')} icon={Icons.Book}>Academy</Button>
+                            </div>
+                        </div>
+                        <div className="absolute right-0 top-0 h-full w-1/2 opacity-10 pointer-events-none">
+                             <div className="w-full h-full bg-gradient-to-l from-black to-transparent"></div>
+                        </div>
+                    </div>
+
+                    {/* NEW ACTIVE THREATS COMPONENT */}
+                    <ActiveThreats />
+
+                    <div className="grid lg:grid-cols-3 gap-8">
+                        {/* Status Column */}
+                        <div className="space-y-6">
+                            <Card title="User Status" icon={Icons.Award}>
+                                <div className="flex justify-between items-end mb-2">
+                                    <span className="text-2xl font-bold text-white">Level {userLevel}</span>
+                                    <span className="text-sm font-bold text-indigo-400">{userXP} / {userLevel * 200} XP</span>
+                                </div>
+                                <ProgressBar value={userXP} max={userLevel * 200} />
+                                <div className="mt-4 grid grid-cols-2 gap-4 text-center">
+                                    <div className="bg-slate-800 p-2 rounded-lg">
+                                        <div className="text-xl font-bold text-white">12</div>
+                                        <div className="text-xs text-slate-500">Scans Run</div>
+                                    </div>
+                                    <div className="bg-slate-800 p-2 rounded-lg">
+                                        <div className="text-xl font-bold text-white">3</div>
+                                        <div className="text-xs text-slate-500">Badges</div>
+                                    </div>
+                                </div>
+                            </Card>
+                            <Card title="Glossary of Terms" icon={Icons.Book}>
+                                <div className="h-64 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+                                    {GLOSSARY.map((item, i) => (
+                                        <div key={i} className="p-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors">
+                                            <div className="font-bold text-sm text-indigo-400 mb-1">{item.term}</div>
+                                            <div className="text-xs text-slate-300 leading-relaxed">{item.def}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </Card>
+                        </div>
+
+                        {/* Feed Column */}
+                        <div className="lg:col-span-2 space-y-6">
+                            <h3 className="font-bold text-xl text-white flex items-center gap-2">
+                                <Icon path={Icons.List} /> Live Intelligence Feed
+                            </h3>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                {NEWS_FEED.map(item => (
+                                    <a href={item.url} key={item.id} target="_blank" rel="noreferrer" className="block">
+                                        <Card className="hover:border-indigo-500 transition-colors cursor-pointer group h-full">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <Badge color={item.tag === 'SCAM ALERT' ? 'red' : item.tag === 'SECURITY' ? 'green' : 'blue'}>{item.tag}</Badge>
+                                                <span className="text-xs text-slate-400 font-mono">{item.date}</span>
+                                            </div>
+                                            <h4 className="font-bold text-lg mb-2 text-white group-hover:text-indigo-400 transition-colors">{item.title}</h4>
+                                            <p className="text-sm text-slate-400 leading-relaxed mb-4">{item.content}</p>
+                                            <div className="flex items-center text-indigo-500 text-xs font-bold mt-auto">
+                                                Read Analysis <Icon path={Icons.ArrowRight} size={14} className="ml-1" />
+                                            </div>
+                                        </Card>
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+// --- APP SHELL ---
+        const App = () => {
+            const [hasStarted, setHasStarted] = useState(false); // NEW: Track start state
+            
+            const [view, setView] = useState('home');
+            const [userXP, setUserXP] = useState(350);
+            const [userLevel, setUserLevel] = useState(3);
+            const [activeCourse, setActiveCourse] = useState(null);
+            const [quizAnswers, setQuizAnswers] = useState({});
+            const [showQuizResult, setShowQuizResult] = useState(null);
+
+            // Force dark mode
+            useEffect(() => { document.body.className = 'dark'; }, []);
+
+            // SHOW LANDING PAGE FIRST
+            if (!hasStarted) {
+                return <LandingPage onStart={() => setHasStarted(true)} />;
+            }
+
+            return (
+                <div className="min-h-screen flex flex-col md:flex-row max-w-[1600px] mx-auto md:p-6 gap-6">
+                    {/* Sidebar */}
+                    <nav className="hidden md:flex flex-col w-72 glass rounded-3xl p-6 h-[calc(100vh-3rem)] sticky top-6 transition-all">
+                        <div className="flex items-center gap-3 mb-10 px-2">
+                            <div className="bg-indigo-600 text-white p-2 rounded-xl shadow-lg shadow-indigo-500/30"><Icon path={Icons.Shield} size={28} /></div>
+                            <div>
+                                <span className="font-black text-xl tracking-tight text-white block">AI<span className="text-indigo-600">Sentinel</span></span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Enterprise</span>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest px-4 mb-2 mt-4">Modules</div>
+                            {[
+                                { id: 'home', label: 'Dashboard', icon: Icons.Home },
+                                { id: 'visuals', label: 'Visual Forensics', icon: Icons.Eye },
+                                { id: 'text', label: 'Text Analysis', icon: Icons.Search },
+                                { id: 'voice', label: 'Voice Forensics', icon: Icons.Mic },
+                                { id: 'scams', label: 'Scam Defense', icon: Icons.Lock },
+                                { id: 'optimizer', label: 'Prompt Optimizer', icon: Icons.Wand },
+                                { id: 'learn', label: 'Academy', icon: Icons.Book }
+                            ].map(item => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setView(item.id)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold transition-all ${view === item.id ? 'bg-indigo-600 text-white shadow-none' : 'text-slate-400 hover:bg-slate-800'}`}
+                                >
+                                    <Icon path={item.icon} size={20} />
+                                    {item.label}
+                                </button>
+                            ))}
+                        </div>
+                    </nav>
+
+                    {/* Main Content */}
+                    <main className="flex-1 p-4 md:p-0 overflow-y-auto">
+                        {/* Mobile Header */}
+                        <div className="md:hidden glass p-4 rounded-xl mb-4 flex justify-between items-center sticky top-4 z-50">
+                            <span className="font-black text-lg text-white">AI<span className="text-indigo-600">Sentinel</span></span>
+                        </div>
+
+                        {view === 'home' && <Dashboard userXP={userXP} userLevel={userLevel} setView={setView} />}
+                        {view === 'visuals' && <VisualForensics />}
+                        {view === 'text' && <TextForensics />}
+                        {view === 'voice' && <VoiceForensics />}
+                        {view === 'optimizer' && <PromptOptimizer />}
+                        
+                        {view === 'learn' && (
+                            <div className="space-y-8 animate-fade-in">
+                                <div className="flex justify-between items-end">
+                                    <div>
+                                        <h2 className="text-3xl font-black text-white">Academy Library</h2>
+                                        <p className="text-slate-400 mt-2">Professional certification modules for AI literacy.</p>
+                                    </div>
+                                </div>
+                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {COURSES.map(course => (
+                                        <Card key={course.id} className="group hover:border-indigo-500 transition-colors cursor-pointer h-full flex flex-col justify-between">
+                                            <div onClick={() => { 
+                                                setActiveCourse(course); 
+                                                setShowQuizResult(null); 
+                                                setQuizAnswers({}); 
+                                            }}>
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <Badge color={course.category.includes("Scam") ? "red" : course.category.includes("Visual") ? "purple" : "blue"}>{course.category}</Badge>
+                                                    <div className="flex items-center gap-1 text-xs font-bold text-slate-400">
+                                                        <Icon path={Icons.Zap} size={14} /> {course.xp} XP
+                                                    </div>
+                                                </div>
+                                                <h3 className="font-bold text-xl text-white mb-2 group-hover:text-indigo-600 transition-colors">{course.title}</h3>
+                                                <div className="flex items-center gap-4 text-sm text-slate-500">
+                                                    <span>Level: {course.level}</span>
+                                                    <span>•</span>
+                                                    <span>{course.duration}</span>
+                                                </div>
+                                                <div className="mt-6 flex items-center text-indigo-600 font-bold text-sm">
+                                                    Start Module <Icon path={Icons.ArrowRight} size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'scams' && (
+                            <div className="space-y-8 animate-fade-in">
+                                <h2 className="text-3xl font-black text-white">Threat Defense Center</h2>
+                                <div className="grid lg:grid-cols-2 gap-6">
+                                    {/* THREAT CARDS */}
+                                    <Card title="The 3-Second Clone" icon={Icons.Alert} className="border-l-4 border-l-red-500">
+                                        <div className="space-y-4">
+                                            <p className="text-sm text-slate-300 leading-relaxed">
+                                                Attackers can clone your voice from a short TikTok video or voicemail greeting. They use this to call your grandparents asking for money.
+                                            </p>
+                                            <div className="bg-red-900/20 p-4 rounded-xl border border-red-800">
+                                                <h4 className="font-bold text-red-200 mb-2">Defense Strategy: The Safe Word</h4>
+                                                <p className="text-xs text-red-300">
+                                                    Agree on a random word (e.g., "Octopus") with your family. If "you" call in distress, they must ask for the word. AI cannot guess this.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                    <Card title="Deepfake Video Calls" icon={Icons.User}>
+                                        <div className="space-y-4">
+                                            <p className="text-sm text-slate-300 leading-relaxed">
+                                                Scammers now use real-time face swapping on Zoom/Skype to impersonate bosses or relatives.
+                                            </p>
+                                            <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-800">
+                                                <h4 className="font-bold text-blue-200 mb-2">Defense Strategy: The Side Turn</h4>
+                                                <p className="text-xs text-blue-300">
+                                                    Ask the caller to turn their head 90 degrees to the side. Live deepfake models often glitch and detach the face mask at extreme angles.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Course Modal with Quiz */}
+                    <Modal isOpen={!!activeCourse} onClose={() => setActiveCourse(null)} title={activeCourse?.title}>
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between text-sm text-slate-500 border-b border-slate-800 pb-4">
+                                <Badge color="blue">{activeCourse?.level}</Badge>
+                                <span>{activeCourse?.duration} read time</span>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                {activeCourse?.content.map((step, i) => (
+                                    <div key={i} className="flex gap-4 p-4 rounded-xl bg-slate-800">
+                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+                                            {i + 1}
+                                        </div>
+                                        <p className="text-slate-300 text-sm leading-relaxed pt-1.5">{step}</p>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* UPDATED QUIZ SECTION - MULTI QUESTION SUPPORT */}
+                            {activeCourse?.quizzes && (
+                                <div className="mt-8 p-6 border-t-2 border-slate-700 bg-slate-800/50 rounded-xl">
+                                    <h4 className="font-bold text-lg mb-4 flex items-center gap-2 text-white">
+                                        <Icon path={Icons.Target} className="text-indigo-500" />
+                                        Certification Exam ({activeCourse.quizzes.length} Questions)
+                                    </h4>
+                                    
+                                    <div className="space-y-8">
+                                        {activeCourse.quizzes.map((q, qIdx) => {
+                                            // Check if this specific question has been answered in this session
+                                            const isAnswered = quizAnswers[activeCourse.id]?.[qIdx] !== undefined;
+                                            
+                                            return (
+                                                <div key={qIdx} className="p-4 bg-slate-900 rounded-lg border border-slate-700">
+                                                    <p className="font-bold text-slate-200 mb-3 text-sm">
+                                                        <span className="text-indigo-500 mr-2">Q{qIdx + 1}.</span> 
+                                                        {q.question}
+                                                    </p>
+                                                    <div className="space-y-2">
+                                                        {q.options.map((opt, oIdx) => (
+                                                            <button 
+                                                                key={oIdx}
+                                                                disabled={isAnswered}
+                                                                onClick={() => {
+                                                                    // Get existing answers for this course, or empty object
+                                                                    const currentAnswers = quizAnswers[activeCourse.id] || {};
+                                                                    // Update state with new answer for this specific question index
+                                                                    setQuizAnswers({
+                                                                        ...quizAnswers,
+                                                                        [activeCourse.id]: { ...currentAnswers, [qIdx]: oIdx }
+                                                                    });
+                                                                }}
+                                                                className={`w-full text-left p-3 rounded-lg border transition-all text-sm flex justify-between items-center ${
+                                                                    isAnswered 
+                                                                        ? oIdx === q.answer 
+                                                                            ? 'bg-green-900/30 border-green-500 text-green-300' // Correct answer
+                                                                            : oIdx === quizAnswers[activeCourse.id][qIdx] 
+                                                                                ? 'bg-red-900/30 border-red-500 text-red-300' // Wrong selection
+                                                                                : 'opacity-50 border-transparent' 
+                                                                        : 'bg-slate-800 border-slate-700 hover:border-indigo-500 text-slate-400 hover:text-white'
+                                                                }`}
+                                                            >
+                                                                {opt}
+                                                                {isAnswered && oIdx === q.answer && <Icon path={Icons.Check} size={16} />}
+                                                                {isAnswered && oIdx === quizAnswers[activeCourse.id][qIdx] && oIdx !== q.answer && <Icon path={Icons.X} size={16} />}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Footer Stats */}
+                                    <div className="mt-6 pt-4 border-t border-slate-700 flex justify-between items-center">
+                                        <div className="text-sm text-slate-400">
+                                            Score: <span className="text-white font-bold">
+                                                {quizAnswers[activeCourse.id] ? Object.values(quizAnswers[activeCourse.id]).filter((ans, idx) => ans === activeCourse.quizzes[idx].answer).length : 0}
+                                            </span> / {activeCourse.quizzes.length}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="pt-4 flex justify-end">
+                                <Button 
+                                    onClick={() => { 
+                                        const currentCourseAnswers = quizAnswers[activeCourse.id] || {};
+                                        const totalCount = activeCourse.quizzes ? activeCourse.quizzes.length : 0;
+                                        
+                                        // Calculate score
+                                        let score = 0;
+                                        if (activeCourse.quizzes) {
+                                            activeCourse.quizzes.forEach((q, idx) => {
+                                                if (currentCourseAnswers[idx] === q.answer) score++;
+                                            });
+                                        }
+
+                                        // Only award XP if they passed (e.g. > 50%)
+                                        if (score > totalCount / 2) {
+                                            setUserXP(p => p + activeCourse.xp); 
+                                            alert(`Module Complete! You scored ${score}/${totalCount}. +${activeCourse.xp} XP`);
+                                        } else {
+                                            alert(`You scored ${score}/${totalCount}. Try again to earn XP.`);
+                                        }
+                                        setActiveCourse(null);
+                                    }}
+                                >
+                                    Finish Module
+                                </Button>
+                            </div>
+                        </div>
+                    </Modal>
+
+                    {/* Mobile Tab Bar */}
+                    <div className="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-slate-700 p-2 grid grid-cols-5 z-50 bg-slate-900/90">
+                        {['home', 'visuals', 'text', 'voice', 'learn'].map(id => (
+                            <button 
+                                key={id} 
+                                onClick={() => setView(id)}
+                                className={`flex flex-col items-center justify-center p-2 rounded-xl transition-colors ${view === id ? 'text-indigo-600' : 'text-slate-400'}`}
+                            >
+                                <Icon path={id === 'home' ? Icons.Home : id === 'visuals' ? Icons.Eye : id === 'text' ? Icons.Search : id === 'voice' ? Icons.Mic : Icons.Book} />
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+        
+    </script>
+</body>
+</html>
