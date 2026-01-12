@@ -147,7 +147,6 @@
             background-clip: text; /* Standard property added */
             -webkit-text-fill-color: transparent;
         }
-        /* ... existing styles ... */
         
       .text-gradient {
             background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
@@ -155,8 +154,6 @@
             background-clip: text; 
             -webkit-text-fill-color: transparent;
         }
-
-        /* --- PASTE THIS NEW CODE HERE --- */
         @keyframes drift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         @keyframes twinkle { 0%, 100% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-20px); } 100% { transform: translateY(0px); } }
@@ -792,81 +789,556 @@
         // 4. CORE FEATURE MODULES
         // ==========================================
 
-        // NEW: AI Prompt Optimizer
-        const PromptOptimizer = () => {
-            const [input, setInput] = useState("");
-            const [output, setOutput] = useState("");
-            const [isOptimizing, setIsOptimizing] = useState(false);
+// AI Prompt Optimizer
+const COMMON_PROMPTS = [
+  // Dating / social / texting
+  "First text after matching on a dating app",
+  "How to ask a girl out without sounding clingy",
+  "What to text after a good first date",
+  "How to apologize by text sincerely",
+  "Funny opening lines for a dating app",
+  "How to keep a conversation going over text",
+  "How to ask someone for their number politely",
+  "What to say to ask for a second date",
+  "How to respond to 'what are you doing?' from a crush",
+  "How to flirt over text without being creepy",
+  "How to say 'I like you' without scaring them",
+  "Good morning text examples",
+  "How to break the ice with a shy person",
+  "How to send a breakup text respectfully",
+  "How to decline a date politely",
+  "How to check in after a first date with no reply",
+  "Short compliments that don't sound creepy",
+  "How to ask for a video call smoothly",
+  "Text message to follow up after exchanging numbers",
+  "How to ask someone out for coffee casually",
+  "How to suggest meeting at an event",
+  "What to text if you want to be friends with benefits",
+  "How to express interest after a long pause in chat",
+  "How to ask for consent politely in messages",
+  "How to flirt using humor in text",
+  "How to recover from a bad text mistake",
+  "How to introduce yourself on LinkedIn messaging",
+  "How to ask a crush to hang out this weekend",
+  "How to ask her/him about relationship status without being invasive",
+  "How to politely ask someone to stop texting late at night",
+  "How to propose a date idea via text",
+  // Career / job / recruiting
+  "Write a cover letter for a software engineering internship (12–16 months)",
+  "How to cold email a recruiter for an internship",
+  "Follow-up email after job interview template",
+  "How to ask for a referral from a former colleague",
+  "How to negotiate salary after an offer",
+  "How to ask for feedback after rejection",
+  "Write a CV for a computer science student",
+  "What to put in a resume for first industry job",
+  "How to ask a manager for flexible hours",
+  "How to write a professional apology to a manager",
+  "How to ask for more responsibility at work",
+  "How to request a reference letter from a professor",
+  "How to pitch yourself for a co-op role",
+  "Professional LinkedIn message to recruiters",
+  "How to prepare for a behavioral interview",
+  "STAR method answer for 'Tell me about a time you failed'",
+  "How to create a professional summary for LinkedIn",
+  "How to ask for an internship extension",
+  // Code / debugging / engineering
+  "Write a React component that fetches data and shows loading/error",
+  "How to fix 'Cannot read property of undefined' in JS",
+  "Explain async/await vs promises for beginners",
+  "Python function to clean CSV and export JSON",
+  "SQL query to deduplicate rows keeping newest",
+  "How to write unit tests in Jest for a function",
+  "How to debug a memory leak in Node.js",
+  "How to optimize a slow SQL query",
+  "How to implement pagination in REST API",
+  "How to implement exponential backoff in HTTP calls",
+  "Template for Git commit messages",
+  "How to resolve merge conflicts in Git step-by-step",
+  "How to set up CI/CD with GitHub Actions",
+  "Dockerfile for Node.js app with best practices",
+  "How to write a secure login endpoint",
+  "How to design a database schema for a todo app",
+  "How to write a migration script for Postgres",
+  "How to test React hooks effectively",
+  "Explain big-O complexity with an example",
+  "How to implement OAuth2 for a web app",
+  // Education / tutoring / explanations
+  "Explain Fourier transform in simple terms",
+  "Explain calculus derivative like I'm 15",
+  "Step-by-step solution for this algebra problem",
+  "Create a lesson plan to teach arrays in JS",
+  "Summarize this article into 5 bullets",
+  "Create flashcards for exam revision on OS concepts",
+  "Explain reinforcement learning with an everyday analogy",
+  "How to study using spaced repetition and active recall",
+  "Create a 4-week study schedule for finals",
+  "How to write a literature review structure",
+  "How to format citations in APA style",
+  "How to plan a research paper outline",
+  // Writing / editing / content
+  "Rewrite this paragraph to be simpler and shorter",
+  "Improve tone of this professional email",
+  "Write 5 subject lines for a cold outreach email",
+  "Draft a product description for headphones",
+  "Create 10 tweet ideas about AI ethics",
+  "Write a persuasive elevator pitch for a fintech startup",
+  "Create meta descriptions for an e-commerce product page",
+  "Proofread and edit this cover letter for clarity",
+  "Turn these notes into a one-page summary",
+  "Write a short bio for a portfolio website",
+  // Marketing / SEO / growth
+  "Write ad copy for a paid social campaign",
+  "Create A/B test ideas for onboarding flow",
+  "How to write a cold outreach sequence for B2B sales",
+  "Create a 7-day content calendar for Instagram",
+  "List keywords for SEO for 'task management app'",
+  "Draft an email drip campaign for onboarding",
+  "Create 5 CTA variations for a landing page",
+  "How to run a low budget user testing study",
+  "How to measure product-market fit metrics",
+  // Audio / voice / forensics / signal
+  "How to detect zero-breath artifacts in speech",
+  "How to create a spectrogram and read it",
+  "How to test for metallic shimmer on sibilants",
+  "Short phrases to use for voice authenticity testing",
+  "How to measure pitch variance to detect synthetic voice",
+  "How to do short-time energy silence detection",
+  "How to extract F0 (pitch) contour from audio",
+  "How to detect re-synthesis artifacts in compressed audio",
+  "Checklist for recording voice evidence professionally",
+  "What audio sample rate/resolution to use for forensics",
+  // Security / privacy / safety
+  "How to write a privacy-safe consent message for voice recordings",
+  "How to explain voice cloning risks to non-technical managers",
+  "Checklist for secure handling of audio evidence",
+  "How to redact PII from a transcript",
+  "Best practices for storing sensitive audio files",
+  // Product / design / UX
+  "How to design microcopy for onboarding",
+  "Create a user interview guide for new feature",
+  "How to write acceptance criteria for a ticket",
+  "Design an accessible form that meets WCAG",
+  "How to prototype a dashboard layout in Figma",
+  "Create wireframe checklist for mobile app",
+  "How to prioritize features using RICE",
+  "Create job description for junior product manager",
+  // Data / ML / AI
+  "How to clean noisy dataset before training",
+  "Explain model fine-tuning vs prompt tuning",
+  "How to measure model bias and mitigation steps",
+  "Create evaluation metrics for classification task",
+  "How to create training/validation/test splits properly",
+  "Explain LLM hallucination and mitigation strategies",
+  "How to generate synthetic training data safely",
+  // Business / strategy / operations
+  "Create a one-page PR plan for product launch",
+  "Write a simple GTM plan for a SaaS MVP",
+  "How to project 12-month revenue with assumptions",
+  "How to calculate TAM, SAM, SOM with examples",
+  "How to create a simple KPI dashboard for execs",
+  // Legal / compliance (high-level, non-legal-advice)
+  "Checklist for GDPR-compliant user data collection (high-level)",
+  "Write a short user-facing privacy snippet for audio recording",
+  "High-level steps for copyright attribution best practice",
+  // Health / fitness / nutrition
+  "Create a 4-week beginner workout plan with limited equipment",
+  "Non-medical diet tips to gain muscle for beginners",
+  "How to track progress for a running plan",
+  "How to structure a daily mindfulness practice",
+  // Finance / personal money
+  "How to create a monthly budget in a spreadsheet",
+  "How to write an email to dispute a bank charge",
+  "Explain difference between TFSA and RRSP (Canada) simply",
+  "How to calculate loan monthly payments",
+  // Travel / trip planning
+  "Create a 3-day low-budget itinerary for Fredericton, NB",
+  "How to pack light for a 7-day trip",
+  "Checklist for travel insurance considerations",
+  "How to find cheap flights with flexible dates",
+  // Creative / art / music
+  "Write a 200-word cyberpunk scene",
+  "Create 8 album title ideas for indie band",
+  "How to structure a short film script outline",
+  "Ideas for relaxing lo-fi playlist themes",
+  // Troubleshooting / how-to
+  "How to reset a 2FA-locked account politely",
+  "How to fix common Wi-Fi connectivity issues",
+  "How to recover deleted files from a Git branch",
+  "How to prepare a reproducible bug report for QA",
+  // Admin / productivity
+  "How to write concise meeting notes into action items",
+  "Create a weekly planner template for university students",
+  "Checklist for pre-launch QA testing",
+  "How to set up a habit tracker for studying",
+  // Templates / copy heavy
+  "Write a polite customer support reply for delayed shipment",
+  "Create a short apology email for a missed deadline",
+  "Compose a message to ask for beta testers",
+  "Write a message to ask a professor for an extension",
+  // Specific technical tasks
+  "SQL to find the top 10 customers by revenue last year",
+  "Bash script to back up a directory with timestamps",
+  "Python script to call an API and save JSON to disk",
+  "How to implement exponential backoff in axios requests",
+  // Advanced dev ops / infra
+  "How to scale a single-server Flask app to multiple instances",
+  "How to set up blue/green deployment on Kubernetes",
+  "How to write a health-check endpoint",
+  "How to create a database migration strategy",
+  // Interviews / mentorship
+  "List of behavioral interview questions for junior devs",
+  "How to give constructive feedback to a mentee",
+  "Create a 30/60/90 day plan for a new hire",
+  // Research / papers / citations
+  "How to structure an abstract for a research paper",
+  "Summarize this paper into a one-paragraph explanation",
+  "How to select related work for a literature review",
+  // Safety / moderation
+  "How to moderate user-generated audio content safely",
+  "Create a simple checklist to detect deepfake audio",
+  // E-commerce / product descriptions
+  "Write 6 product descriptions for a smartwatch",
+  "Create 5 email subject lines for cart abandonment",
+  "How to present pricing tiers clearly on a pricing page",
+  // Ethics / policy
+  "Explain ethical concerns of synthetic media to non-technical users",
+  "How to create a responsible AI usage policy draft (high-level)",
+  // Customer research / UX testing
+  "Design a script for a 30-minute user interview",
+  "How to analyze open-ended survey responses quickly",
+  "Create a usability test plan for mobile onboarding",
+  // Misc helpful personal tasks
+  "How to ask a landlord for a lease extension politely",
+  "How to request time off professionally from manager",
+  "How to write a short resignation email",
+  // Hobbies / DIY
+  "Step-by-step recipe to bake a simple loaf of bread",
+  "How to plan a weekend hiking trip on a budget",
+  "How to start a small vegetable garden in pots",
+  // Localization / translation
+  "Translate this paragraph into idiomatic Spanish (friendly tone)",
+  "Localize marketing copy for a Canadian audience",
+  // Accessibility / inclusivity
+  "Checklist for creating accessible forms (labels, errors, keyboard)",
+  "How to write alt text for product images effectively",
+  // Content strategy / social
+  "Generate 30 Instagram captions for a fitness brand",
+  "Create blog post ideas on 'AI and society' with SEO keywords",
+  // Testing / QA
+  "How to create a test matrix for cross-browser testing",
+  "Write a reproducible test for a reported bug",
+  // Data viz / reporting
+  "How to choose chart types for comparing time series",
+  "Create slide bullets for a 5-minute product metrics update",
+  // Legal-adjacent safe prompts
+  "High-level checklist for consent when recording interviews",
+  "How to redact personal names from a transcript manually",
+  // Career soft skills
+  "How to give a short presentation when nervous",
+  "How to ask for mentorship at work politely",
+  // More dating / social variations
+  "How to respond to 'are you seeing anyone?' tactfully",
+  "What to text after a fade-away from a match",
+  "How to ask if someone wants to be exclusive (text)",
+  // More coding patterns
+  "Explain closures in JavaScript with simple examples",
+  "How to implement memoization for a slow function",
+  // More ML / data ops
+  "How to detect label leakage in a dataset",
+  "How to run hyperparameter search effectively",
+  // Even more user common asks
+  "How to prepare for a coding whiteboard interview",
+  "How to organize references in a research paper",
+  "How to request a refund from an online order politely",
+  "Tips to improve sleep hygiene for students",
+  "How to write an FAQ section for a product",
+  "How to build a simple habit of daily coding in 30 days",
+  "How to prepare a demo for a product pitch",
+  "How to write a short onboarding checklist for new users",
+  "How to test for audio clipping in a recording",
+  "How to identify voice overlap or unnatural cuts in audio",
+  "How to measure SNR for a recorded sample",
+  "How to check sample rate mismatches in audio files",
+  "How to create a consent form for recording in plain language",
+  "How to summarize meeting transcripts into action items",
+  "How to create a quick reference guide for your app",
+  "How to write friendly but firm boundaries in messages",
+  "How to prepare a cheat sheet for a technical interview",
+  "Write 10 subject line variations for B2B outreach",
+  "Create 5 short scripts for product demo videos",
+  "How to structure a simple PR/press release",
+  "How to compare two versions of a resume quickly",
+  "How to craft a polite 'no thanks' reply to recruiters",
+  "How to ask clients for testimonials politely",
+  "How to map user journeys for a new feature",
+  "How to build a minimum lovable product (MLP) plan",
+  "How to write a one-paragraph executive summary",
+  "How to translate technical jargon into plain English",
+  "How to build an accessible color palette",
+  "How to write secure password reset flow",
+  "How to prepare a reproducible demo for QA",
+  "How to design a simple experiment for user engagement",
+  "How to write a short elevator pitch for job interviews",
+  "How to prepare a study plan for GRE/GMAT",
+  "How to check for hallucinations in model output",
+  "How to craft a media statement for incident response",
+  "How to create an easy onboarding checklist for beta users",
+  "How to set priorities using MoSCoW method",
+  "How to structure retro notes after a sprint",
+  "How to make a concise changelog entry",
+  "How to write effective tooltips for complex UI",
+  "How to prepare a demo script for stakeholder demo",
+  "How to create a consent-friendly data collection plan",
+  "How to draft a privacy-first feature rollout notice",
+  "How to create a checklist for handover documentation",
+  "How to set up automated backups for a small web app",
+  "How to write a polite follow-up for unpaid invoices",
+  "How to create a short safety script for customer support",
+  "How to write a policy for acceptable use of generated content",
+  "How to create a one-page onboarding for new project contributors",
+  "How to summarize code review comments into tasks",
+  "How to write a short checklist for content moderation",
+  "How to test voice models for demographic bias (high-level)",
+  "How to design a lightweight experiment for pricing",
+  "How to create a simple incident response checklist",
+  "How to draft a short code of conduct for community chat"
+];
 
-            const handleOptimize = () => {
-                if(!input.trim()) return;
-                setIsOptimizing(true);
-                setTimeout(() => {
-                    let enhanced = `### Role & Objective\nAct as a world-class expert. Your task is to: ${input}\n\n### Context & Constraints\n- Be specific and avoid generic fluff.\n- Use a professional, authoritative tone.\n- If applicable, cite specific frameworks or methodologies.\n\n### Output Format\n- Use Markdown for structure.\n- Provide a step-by-step breakdown.\n- End with a summary of key takeaways.`;
-                    
-                    if (input.toLowerCase().includes("image") || input.toLowerCase().includes("picture") || input.toLowerCase().includes("photo")) {
-                        enhanced = `### Image Generation Prompt\n**Subject:** ${input}\n**Style:** Photorealistic, 8k resolution, cinematic lighting, highly detailed, sharp focus\n**Camera:** 85mm lens, f/1.8 aperture, ISO 100\n**Negative Prompt:** blurry, distorted, low quality, ugly, watermark, text, deformed hands, extra fingers`;
-                    } else if (input.toLowerCase().includes("code") || input.toLowerCase().includes("function") || input.toLowerCase().includes("script")) {
-                        enhanced = `### Coding Expert Role\n**Task:** ${input}\n\n**Requirements:**\n1. Write clean, efficient, and commented code.\n2. Handle edge cases and potential errors.\n3. Explain the logic briefly before the code block.\n4. Use modern best practices (e.g., ES6+ for JS, Python 3.10+).\n5. Provide a usage example.`;
-                    } else if (input.toLowerCase().includes("email") || input.toLowerCase().includes("letter")) {
-                        enhanced = `### Professional Communication\n**Task:** Write a ${input}\n\n**Tone:** Professional, concise, and empathetic.\n**Structure:**\n1. Clear Subject Line\n2. Professional Salutation\n3. The "Ask" (Directly state the purpose)\n4. Context/Reasoning\n5. Call to Action/Next Steps\n6. Professional Sign-off`;
-                    }
+const PROMPT_TIPS = [
+  "Include context: who is the audience, the tone, and constraints (word count, format).",
+  "Specify the deliverable precisely (examples, variants, checklist, code + tests, one-paragraph summary).",
+  "For social/dating: include relationship stage (first message, post-date), desired outcome (get reply, arrange meet).",
+  "For code: include runtime, versions, sample input/output, expected corner-cases, and tests.",
+  "For audio/forensics: include sample rate, example phrases, suspected artifacts, and how to validate.",
+  "Use 'Do this / Don't do this' examples to remove ambiguity.",
+  "Add success criteria: '3 variants', '<= 80 tokens', 'bullet list of steps', 'include test case'.",
+  "If asking about a person or product, give short context and what to avoid (privacy/defamation).",
+  "When asking for tone, give examples: 'friendly, concise, and slightly playful' or 'formal and direct'.",
+  "When unsure, ask the assistant to propose 3 options and choose one to refine."
+];
 
-                    setOutput(enhanced);
-                    setIsOptimizing(false);
-                }, 1000);
-            };
+const PromptOptimizer = () => {
+    const [input, setInput] = useState("");
+    const [output, setOutput] = useState("");
+    const [isOptimizing, setIsOptimizing] = useState(false);
+    const [detectedRole, setDetectedRole] = useState(null);
+    const [filter, setFilter] = useState("");
+    const [selectedPrompt, setSelectedPrompt] = useState("");
+    const [copyNotice, setCopyNotice] = useState("");
 
-            const copyToClipboard = () => {
-                navigator.clipboard.writeText(output);
-                alert("Prompt copied to clipboard!");
-            };
+    // keyboard shortcut: Ctrl/Cmd + Enter to optimize
+    useEffect(() => {
+        const onKey = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                handleOptimize();
+            }
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [input]);
 
-            return (
-                <div className="space-y-8 animate-fade-in">
-                    <div className="grid lg:grid-cols-2 gap-8">
-                        <div className="flex flex-col h-full">
-                            <h2 className="text-3xl font-black text-white mb-4">AI Prompt Optimizer</h2>
-                            <p className="text-slate-300 mb-6">
-                                Turn basic requests into high-performance engineering prompts. Better inputs equal better AI detection and generation results.
-                            </p>
-                            
-                            <div className="relative flex-grow min-h-[300px]">
-                                <textarea
-                                    className="w-full h-full p-6 rounded-2xl bg-slate-800 border border-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none resize-none font-mono text-sm leading-relaxed shadow-inner text-white placeholder-slate-500"
-                                    placeholder="Enter your basic request here (e.g., 'Write an email about project delays' or 'Generate a picture of a cat')..."
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                ></textarea>
-                            </div>
-                            
-                            <div className="mt-4">
-                                <Button onClick={handleOptimize} disabled={!input.trim() || isOptimizing} icon={Icons.Wand} className="w-full">
-                                    {isOptimizing ? "Optimizing..." : "Magic Optimize"}
-                                </Button>
-                            </div>
+    // role detection logic
+    const detectRoleAndConstraints = (text) => {
+        const t = text.toLowerCase();
+        let role = "World-Class Expert";
+        let constraints = "- Be specific and avoid generic fluff.";
+        let structure = "1) Context\n2) Steps\n3) Example\n4) Short Summary";
+
+        if (/\b(dating|text(ing)?|ask out|flirt|crush|date|match|tinder|bumble)\b/.test(t)) {
+            role = "Practical Dating & Messaging Coach";
+            constraints = "- Include relationship stage and the exact goal (reply/meet/comfort).\n- Provide 3 variants: safe, casual, bold.";
+            structure = "Context → 3 message variants (short/medium/long) → When to send → What to avoid";
+        } else if (/\b(code|javascript|python|react|node|api|sql|bug|error|function)\b/.test(t)) {
+            role = "Senior Software Engineer (practical, testable)";
+            constraints = "- Specify language, runtime/versions, sample input & expected output, and tests.";
+            structure = "Problem → Plan → Code → Example → Tests";
+        } else if (/\b(audio|voice|spectrogram|breath|sibilant|forensic|clipping)\b/.test(t)) {
+            role = "Audio Forensics Specialist (practical checks)";
+            constraints = "- Mention sample rate, suspected artifacts, and test phrases; include confidence guidance.";
+            structure = "Context → Key signatures → How to test → Confidence / Evidence";
+        } else if (/\b(image|photo|prompt engineer|dall-?e|midjourney|style)\b/.test(t)) {
+            role = "Prompt Engineer for Image Generation";
+            constraints = "- Include camera, lens, lighting, style, negatives, and aspect ratio.";
+            structure = "Subject → Style/Lighting → Camera → Negative prompts → Params";
+        } else if (/\b(job|cover letter|resume|intern|pep|co-op)\b/.test(t)) {
+            role = "Career Coach (hiring-focused)";
+            constraints = "- Include duration preference (e.g., 12–16 months), role, and 3 achievements.";
+            structure = "Opening → Relevant experience → Fit → Call to action";
+        } else if (/\b(marketing|ad copy|seo|subject line|email)\b/.test(t)) {
+            role = "Conversion Copywriter";
+            constraints = "- Include audience, CTA, character limits, and KPI (CTR/open rate).";
+            structure = "Hook → Benefit → CTA → Variants for A/B";
+        }
+        return { role, constraints, structure };
+    };
+
+    const handleOptimize = () => {
+        if (! (input.trim() || selectedPrompt.trim()) ) return;
+        setIsOptimizing(true);
+        setDetectedRole(null);
+
+        const promptText = (selectedPrompt && !input.trim()) ? selectedPrompt : input.trim();
+
+        setTimeout(() => {
+            const { role, constraints, structure } = detectRoleAndConstraints(promptText);
+
+            // build paste-ready prompt with specifics
+            const pasteReady = `${promptText}
+--answer-as="${role}"
+--format="variants,steps,example"
+--constraints="${constraints.replace(/\n/g, ' | ')}"
+--max_tokens=220
+--success="Provide 3 variants (short/med/long), one concrete example, and a concise checklist of what to include/avoid."`;
+
+            const uiOutput = `### Role: ${role}\n**Goal:** ${promptText}\n\n**Constraints & Style:**\n${constraints}\n\n**Output Structure:**\n${structure}\n\n**Paste-ready prompt (copy & paste into your LLM):**\n${pasteReady}\n\n**Quick Tips (what to include):**\n- ${PROMPT_TIPS.join("\n- ")}\n`;
+
+            setDetectedRole(role);
+            setOutput(uiOutput);
+            setIsOptimizing(false);
+        }, 650);
+    };
+
+    const copyToClipboard = async (text) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopyNotice("Copied!");
+            setTimeout(() => setCopyNotice(""), 1300);
+        } catch (e) {
+            alert("Copy failed — try manual copy.");
+        }
+    };
+
+    const filtered = useMemo(() => {
+        const q = filter.trim().toLowerCase();
+        if (!q) return COMMON_PROMPTS;
+        return COMMON_PROMPTS.filter(p => p.toLowerCase().includes(q) || p.toLowerCase().split(/\s+/).some(w => w.startsWith(q)));
+    }, [filter]);
+
+    return (
+        <div className="space-y-6 animate-fade-in">
+            <div className="grid lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 space-y-4">
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <h2 className="text-3xl font-black text-white">Prompt Optimizer</h2>
+                            <p className="text-slate-300 text-sm mt-1">Paste your ask or pick an example, then click <strong>Generate Pro Prompt</strong>. (Ctrl/Cmd+Enter to run)</p>
                         </div>
 
-                        <div className="flex flex-col h-full">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-xl font-bold text-white">Optimized Result</h3>
-                                {output && <button onClick={copyToClipboard} className="text-indigo-400 hover:text-white text-sm font-bold">Copy Output</button>}
-                            </div>
-                            <div className="flex-grow bg-slate-900 border border-slate-700 rounded-2xl p-6 overflow-y-auto min-h-[300px]">
-                                {output ? (
-                                    <pre className="whitespace-pre-wrap font-mono text-sm text-green-400 leading-relaxed">{output}</pre>
-                                ) : (
-                                    <div className="h-full flex flex-col items-center justify-center text-slate-600 opacity-50">
-                                        <Icon path={Icons.Terminal} size={48} />
-                                        <p className="mt-4 text-sm">Waiting for input...</p>
-                                    </div>
-                                )}
-                            </div>
+                        <div className="text-sm text-slate-400">
+                            Detected persona: <div className="font-bold text-white">{detectedRole || "—"}</div>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 items-center">
+                        <input
+                            value={filter}
+                            onChange={(e) => setFilter(e.target.value)}
+                            placeholder="Search examples (e.g., 'text', 'react', 'voice')"
+                            className="flex-1 p-3 rounded-md bg-slate-800 border border-slate-700 text-sm placeholder-slate-500"
+                        />
+                        <Button onClick={() => { setFilter(""); }} variant="ghost">Clear</Button>
+                    </div>
+
+                    <textarea
+                        value={input || selectedPrompt}
+                        onChange={(e) => { setInput(e.target.value); setSelectedPrompt(""); }}
+                        placeholder="Describe what you want (e.g., 'How to text someone after a first date? Include 3 message lengths and tone.')"
+                        className="w-full min-h-[160px] p-4 rounded-2xl bg-slate-800 border border-slate-700 font-mono text-sm text-white resize-none"
+                    />
+
+                    <div className="flex gap-3">
+                        <Button onClick={handleOptimize} disabled={isOptimizing || !(input.trim() || selectedPrompt.trim())} icon={Icons.Wand} variant="primary">
+                            {isOptimizing ? "Optimizing..." : "Generate Pro Prompt"}
+                        </Button>
+
+                        <Button onClick={() => { setInput(""); setSelectedPrompt(""); setOutput(""); setDetectedRole(null); }} variant="ghost">Reset</Button>
+
+                        <Button onClick={() => { if (!output) return alert("Generate first."); copyToClipboard(output); }} variant="secondary">Copy Output</Button>
+
+                        <div className="ml-auto text-xs text-slate-400">{copyNotice}</div>
+                    </div>
+
+                    <div className="bg-slate-900 border border-slate-700 rounded-2xl p-4 min-h-[160px]">
+                        {output ? (
+                            <pre className="whitespace-pre-wrap font-mono text-sm text-green-400">{output}</pre>
+                        ) : (
+                            <div className="text-slate-500 text-sm">Your optimized prompt and persona will appear here after generation.</div>
+                        )}
+                    </div>
+
+                    {/* Tips section (clear, actionable) */}
+                    <div className="grid md:grid-cols-3 gap-3 mt-2">
+                        <div className="bg-slate-800 p-3 rounded border border-slate-700">
+                            <div className="font-bold text-white text-sm mb-2">Include</div>
+                            <ul className="text-xs text-slate-300 space-y-1">
+                                <li>• Who is the audience (age, role, background)</li>
+                                <li>• Desired tone (e.g., friendly, formal, playful)</li>
+                                <li>• Concrete output format (examples, checklist, code + tests)</li>
+                                <li>• Constraints (length, tokens, language)</li>
+                                <li>• Success criteria (e.g., "3 variants", "get a reply")</li>
+                            </ul>
+                        </div>
+
+                        <div className="bg-slate-800 p-3 rounded border border-slate-700">
+                            <div className="font-bold text-white text-sm mb-2">Avoid</div>
+                            <ul className="text-xs text-slate-300 space-y-1">
+                                <li>• Vague instructions like "be world-class" with no context</li>
+                                <li>• Long walls of text without examples</li>
+                                <li>• Asking multiple unrelated tasks in one prompt</li>
+                                <li>• Privacy-sensitive specifics without consent</li>
+                            </ul>
+                        </div>
+
+                        <div className="bg-slate-800 p-3 rounded border border-slate-700">
+                            <div className="font-bold text-white text-sm mb-2">Quick checklist</div>
+                            <ul className="text-xs text-slate-300 space-y-1">
+                                <li>• Context ✔︎</li>
+                                <li>• Tone ✔︎</li>
+                                <li>• Example (do/don't) ✔︎</li>
+                                <li>• Output shape (variants, steps) ✔︎</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
-            );
-        };
+
+                {/* Sidebar: Examples & tips */}
+                <aside className="space-y-4">
+                    <Card title="Examples (click Use)" icon={Icons.List}>
+                        <div style={{ maxHeight: 420, overflow: "auto" }} className="pr-2 custom-scrollbar">
+                            {filtered.map((p, i) => (
+                                <div key={i} className="flex items-center justify-between bg-slate-800 p-2 rounded-md border border-slate-700 my-1">
+                                    <div className="text-sm text-slate-200 truncate pr-2">{p}</div>
+                                    <div className="flex gap-2">
+                                        <button className="text-xs px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 font-bold" onClick={() => { setSelectedPrompt(p); setInput(""); }}>
+                                            Use
+                                        </button>
+                                        <button className="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-slate-600" onClick={() => copyToClipboard(p)}>Copy</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+
+                    <Card title="Prompt Tips" icon={Icons.Wand}>
+                        <div className="text-xs text-slate-300 space-y-2">
+                            {PROMPT_TIPS.map((t, idx) => <div key={idx}>• {t}</div>)}
+                            <div className="mt-2 text-[11px] text-slate-500">Pro tip: If you're stuck, paste the raw ask and use the generated persona line to force clarity (e.g., <code>--answer-as="Practical Dating Coach"</code>).</div>
+                        </div>
+                    </Card>
+
+                    <Card title="Example quick flows" icon={Icons.Check}>
+                        <div className="text-xs text-slate-300 space-y-2">
+                            <div><strong>Texting:</strong> Provide relationship stage → 3 message lengths → When to send.</div>
+                            <div><strong>Code:</strong> Provide language & sample input → Ask for code + tests.</div>
+                            <div><strong>Audio Forensics:</strong> Provide sample rate & suspicious segments → Ask for procedure to test.</div>
+                        </div>
+                    </Card>
+                </aside>
+            </div>
+        </div>
+    );
+};
 
         const ActiveThreats = () => {
             const [index, setIndex] = useState(0);
@@ -904,325 +1376,518 @@
             );
         };
 
-        const VoiceForensics = () => {
-            const [isRecording, setIsRecording] = useState(false);
-            const [recordingTime, setRecordingTime] = useState(0);
-            const [recordings, setRecordings] = useState([]);
-            const [currentPlayback, setCurrentPlayback] = useState(null);
-            const [audioLevels, setAudioLevels] = useState(new Array(20).fill(10));
-            const [analyzingId, setAnalyzingId] = useState(null);
-            const [showGuide, setShowGuide] = useState(false);
-            
-            const mediaRecorderRef = useRef(null);
-            const audioContextRef = useRef(null);
-            const analyserRef = useRef(null);
-            const timerRef = useRef(null);
-            const chunksRef = useRef([]);
-            const animationFrameRef = useRef(null);
-            const audioElementsRef = useRef({});
+// Voice
+const VoiceForensics = () => {
+  // --- state (simple, human-friendly names) ---
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [recordings, setRecordings] = useState([]);
+  const [currentPlayback, setCurrentPlayback] = useState(null);
+  const [audioLevels, setAudioLevels] = useState(new Array(20).fill(10));
+  const [analyzingId, setAnalyzingId] = useState(null);
+  const [showGuide, setShowGuide] = useState(false);
+  const [practiceMode, setPracticeMode] = useState(false);
+  // user guesses: { recId: { zeroBreath: bool, shimmer: bool, pitchStable: bool, latency: bool } }
+  const [userGuesses, setUserGuesses] = useState({});
 
-            useEffect(() => {
-                return () => {
-                    cancelAnimationFrame(animationFrameRef.current);
-                    clearInterval(timerRef.current);
-                    if (audioContextRef.current) audioContextRef.current.close();
-                };
-            }, []);
+  // --- refs for media / visualizer / audio elements ---
+  const mediaRecorderRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const timerRef = useRef(null);
+  const chunksRef = useRef([]);
+  const animationFrameRef = useRef(null);
+  const audioElementsRef = useRef({});
 
-            const startRecording = async () => {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    
-                    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-                    analyserRef.current = audioContextRef.current.createAnalyser();
-                    analyserRef.current.fftSize = 64;
-                    const source = audioContextRef.current.createMediaStreamSource(stream);
-                    source.connect(analyserRef.current);
+  // Clean up on unmount: stop any running audio, cancel frames, close audioContext, revoke URLs
+  useEffect(() => {
+    return () => {
+      cancelAnimationFrame(animationFrameRef.current);
+      clearInterval(timerRef.current);
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        try { mediaRecorderRef.current.stop(); } catch (e) {}
+      }
+      if (audioContextRef.current) {
+        try { audioContextRef.current.close(); } catch (e) {}
+      }
+      // revoke object URLs we created
+      recordings.forEach(r => {
+        if (r.url && r.url.startsWith('blob:')) {
+          try { URL.revokeObjectURL(r.url); } catch (e) {}
+        }
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-                    mediaRecorderRef.current = new MediaRecorder(stream);
-                    chunksRef.current = [];
+  // Helper: clamp and smooth values for visualizer
+  const smoothLevels = (rawArr) => {
+    // simple smoothing: clamp and scale to 6-100%
+    return rawArr.slice(0, 20).map(v => {
+      const scaled = Math.floor((v / 255) * 100);
+      return Math.max(6, Math.min(100, scaled));
+    });
+  };
 
-                    mediaRecorderRef.current.ondataavailable = (e) => {
-                        if (e.data.size > 0) chunksRef.current.push(e.data);
-                    };
+  // Start recording: request mic, wire analyser for visual feedback, start mediaRecorder
+  const startRecording = async () => {
+    try {
+      // If an existing audioContext exists, close it first to avoid multiple contexts
+      if (audioContextRef.current) {
+        try { await audioContextRef.current.close(); } catch (e) {}
+        audioContextRef.current = null;
+      }
 
-                    mediaRecorderRef.current.onstop = () => {
-                        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-                        const url = URL.createObjectURL(blob);
-                        const newRecording = {
-                            id: Date.now(),
-                            url,
-                            date: new Date().toLocaleString(),
-                            duration: recordingTime,
-                            name: `Audio Evidence ${recordings.length + 1}`,
-                            analysis: null
-                        };
-                        setRecordings(prev => [newRecording, ...prev]);
-                        setRecordingTime(0);
-                        
-                        stream.getTracks().forEach(track => track.stop());
-                        cancelAnimationFrame(animationFrameRef.current);
-                        setAudioLevels(new Array(20).fill(10));
-                    };
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 64; // compact visualizer
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      source.connect(analyserRef.current);
 
-                    mediaRecorderRef.current.start();
-                    setIsRecording(true);
-                    
-                    timerRef.current = setInterval(() => {
-                        setRecordingTime(prev => prev + 1);
-                    }, 1000);
+      // Setup MediaRecorder
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      chunksRef.current = [];
 
-                    const updateVisualizer = () => {
-                        if (!analyserRef.current) return;
-                        const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-                        analyserRef.current.getByteFrequencyData(dataArray);
-                        
-                        const step = Math.floor(dataArray.length / 20);
-                        const newLevels = [];
-                        for(let i=0; i<20; i++) {
-                            const val = dataArray[i * step];
-                            const height = Math.max(10, (val / 255) * 100);
-                            newLevels.push(height);
-                        }
-                        setAudioLevels(newLevels);
-                        animationFrameRef.current = requestAnimationFrame(updateVisualizer);
-                    };
-                    updateVisualizer();
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
+      };
 
-                } catch (err) {
-                    console.error("Error accessing microphone:", err);
-                    alert("Could not access microphone. Please ensure permissions are granted.");
-                }
-            };
+      mediaRecorderRef.current.onstop = async () => {
+        try {
+          const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+          const url = URL.createObjectURL(blob);
 
-            const stopRecording = () => {
-                if (mediaRecorderRef.current && isRecording) {
-                    mediaRecorderRef.current.stop();
-                    setIsRecording(false);
-                    clearInterval(timerRef.current);
-                }
-            };
+          // create a placeholder recording; we'll update duration shortly if we can
+          const id = Date.now();
+          const placeholder = {
+            id,
+            url,
+            date: new Date().toLocaleString(),
+            duration: recordingTime, // best-effort
+            name: `Audio Evidence ${recordings.length + 1}`,
+            analysis: null
+          };
 
-            const togglePlayback = (recording) => {
-                if (currentPlayback === recording.id) {
-                    const audio = audioElementsRef.current[recording.id];
-                    if (audio) {
-                        audio.pause();
-                        setCurrentPlayback(null);
-                    }
-                    return;
-                }
+          // add immediately so UI updates, then try to read accurate duration
+          setRecordings(prev => [placeholder, ...prev]);
+          setRecordingTime(0);
 
-                if (currentPlayback) {
-                    const prevAudio = audioElementsRef.current[currentPlayback];
-                    if (prevAudio) {
-                        prevAudio.pause();
-                        prevAudio.currentTime = 0;
-                    }
-                }
+          // stop microphone tracks
+          stream.getTracks().forEach(track => {
+            try { track.stop(); } catch (e) {}
+          });
 
-                if (!audioElementsRef.current[recording.id]) {
-                    const audio = new Audio(recording.url);
-                    audio.onended = () => setCurrentPlayback(null);
-                    audioElementsRef.current[recording.id] = audio;
-                }
-                
-                audioElementsRef.current[recording.id].play();
-                setCurrentPlayback(recording.id);
-            };
+          // compute accurate duration if possible (load metadata)
+          const probe = new Audio();
+          probe.src = url;
+          probe.onloadedmetadata = () => {
+            const accurate = Math.round(probe.duration);
+            setRecordings(prev => prev.map(r => r.id === id ? { ...r, duration: accurate } : r));
+            probe.src = '';
+          };
+        } catch (err) {
+          console.error('Error finalizing recording', err);
+        } finally {
+          cancelAnimationFrame(animationFrameRef.current);
+          setAudioLevels(new Array(20).fill(10));
+        }
+      };
 
-            const analyzeRecording = (id) => {
-                setAnalyzingId(id);
-                // Simulate AI analysis delay
-                setTimeout(() => {
-                    setRecordings(prev => prev.map(rec => {
-                        if (rec.id === id) {
-                            const isFake = Math.random() > 0.5;
-                            return {
-                                ...rec,
-                                analysis: {
-                                    score: isFake ? Math.floor(Math.random() * 30 + 70) : Math.floor(Math.random() * 20),
-                                    label: isFake ? "Synthetic Signature Detected" : "Natural Voice Patterns",
-                                    details: isFake ? "Lack of breathing artifacts, monotonic frequency distribution." : "Natural frequency variance and breath pauses detected."
-                                }
-                            };
-                        }
-                        return rec;
-                    }));
-                    setAnalyzingId(null);
-                }, 2000);
-            };
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
 
-            const deleteRecording = (id) => {
-                if (currentPlayback === id) {
-                    audioElementsRef.current[id].pause();
-                    setCurrentPlayback(null);
-                }
-                setRecordings(prev => prev.filter(r => r.id !== id));
-                delete audioElementsRef.current[id];
-            };
+      // timer increment for UI time display
+      timerRef.current = setInterval(() => setRecordingTime(prev => prev + 1), 1000);
 
-            const handleFileUpload = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const url = URL.createObjectURL(file);
-                    const newRecording = {
-                        id: Date.now(),
-                        url,
-                        date: new Date().toLocaleString(),
-                        duration: 0, 
-                        name: file.name,
-                        analysis: null
-                    };
-                    setRecordings(prev => [newRecording, ...prev]);
-                }
-            };
+      // visualizer loop
+      const updateVisualizer = () => {
+        if (!analyserRef.current) return;
+        const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+        analyserRef.current.getByteFrequencyData(dataArray);
+        const newLevels = smoothLevels(Array.from(dataArray));
+        setAudioLevels(newLevels);
+        animationFrameRef.current = requestAnimationFrame(updateVisualizer);
+      };
+      updateVisualizer();
+    } catch (err) {
+      console.error("mic error", err);
+      alert("Could not access mic. Check microphone permissions and try again.");
+    }
+  };
 
-            return (
-                <div className="grid lg:grid-cols-2 gap-8 animate-fade-in h-[calc(100vh-140px)]">
-                    {/* Recorder Section */}
-                    <div className="flex flex-col h-full bg-slate-800 rounded-3xl shadow-lg border border-slate-700 overflow-hidden relative">
-                         <div className={`absolute inset-0 transition-opacity duration-500 pointer-events-none ${isRecording ? 'opacity-20 bg-red-500' : 'opacity-0'}`}></div>
-                         
-                         <div className="flex-1 flex flex-col items-center justify-center p-8 relative z-10">
-                            <div className="absolute top-6 right-6">
-                                <Button variant="secondary" className="text-xs" icon={Icons.Book} onClick={() => setShowGuide(true)}>Audio Signatures Guide</Button>
-                            </div>
+  // Stop the recorder safely
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (e) {
+        // ignore - sometimes it throws if already stopping
+      }
+      setIsRecording(false);
+      clearInterval(timerRef.current);
+    }
+  };
 
-                            <div className="text-6xl font-mono text-slate-200 font-bold mb-8 tracking-wider">
-                                {formatTime(recordingTime)}
-                            </div>
+  // Toggle playback for a recording: pause current, play requested. Safe checks everywhere.
+  const togglePlayback = (recording) => {
+    try {
+      // if clicking on currently playing, pause it
+      if (currentPlayback === recording.id) {
+        const audio = audioElementsRef.current[recording.id];
+        if (audio) {
+          audio.pause();
+          audio.currentTime = 0;
+        }
+        setCurrentPlayback(null);
+        return;
+      }
 
-                            {/* Visualizer */}
-                            <div className="flex items-end justify-center gap-1 h-24 w-full max-w-sm mb-12">
-                                {audioLevels.map((level, idx) => (
-                                    <div 
-                                        key={idx} 
-                                        className={`w-3 rounded-t-full transition-all duration-75 ${isRecording ? 'bg-red-500' : 'bg-slate-600'}`}
-                                        style={{ height: `${level}%` }}
-                                    ></div>
-                                ))}
-                            </div>
+      // pause any other playing audio
+      if (currentPlayback && audioElementsRef.current[currentPlayback]) {
+        const prev = audioElementsRef.current[currentPlayback];
+        try { prev.pause(); prev.currentTime = 0; } catch (e) {}
+      }
 
-                            <div className="relative">
-                                {isRecording && <div className="pulse-ring"></div>}
-                                <button 
-                                    onClick={isRecording ? stopRecording : startRecording}
-                                    className={`w-24 h-24 rounded-full flex items-center justify-center shadow-xl transition-all transform hover:scale-105 active:scale-95 focus:outline-none z-20 ${
-                                        isRecording 
-                                            ? 'bg-white border-4 border-red-500 text-red-500' 
-                                            : 'bg-red-500 text-white border-4 border-red-100/10 hover:shadow-red-500/30'
-                                    }`}
-                                >
-                                    <Icon path={isRecording ? Icons.Square : Icons.Mic} size={40} />
-                                </button>
-                            </div>
-                            
-                            <p className="mt-8 text-slate-400 font-medium tracking-wide uppercase text-sm">
-                                {isRecording ? "Listening..." : "Tap to Record Evidence"}
-                            </p>
-                            
-                            <div className="mt-8">
-                                <label className="cursor-pointer text-indigo-500 hover:text-indigo-400 font-bold text-sm flex items-center gap-2">
-                                    <input type="file" accept="audio/*" onChange={handleFileUpload} className="hidden" />
-                                    <Icon path={Icons.Upload} size={16} /> Upload Audio File
-                                </label>
-                            </div>
-                         </div>
-                    </div>
+      // create the audio element if not present
+      if (!audioElementsRef.current[recording.id]) {
+        const audio = new Audio(recording.url);
+        audio.onended = () => setCurrentPlayback(null);
+        audioElementsRef.current[recording.id] = audio;
+      }
 
-                    {/* List Section */}
-                    <div className="flex flex-col h-full space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                <Icon path={Icons.List} /> Evidence Locker
-                            </h3>
-                            <span className="text-sm font-bold text-slate-400">{recordings.length} Files</span>
-                        </div>
+      const toPlay = audioElementsRef.current[recording.id];
+      // try to play (browsers may block autoplay if not triggered by user)
+      const playPromise = toPlay.play();
+      if (playPromise && playPromise.catch) {
+        playPromise.catch(err => {
+          console.warn('Playback prevented:', err);
+          alert('Playback blocked by browser. Try interacting (click) before playing.');
+        });
+      }
+      setCurrentPlayback(recording.id);
+    } catch (err) {
+      console.error('Playback error', err);
+      alert('Playback error — check console for details.');
+    }
+  };
 
-                        <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                            {recordings.length === 0 ? (
-                                <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-3 border-2 border-dashed border-slate-700 rounded-2xl">
-                                    <Icon path={Icons.MicOff} size={48} className="opacity-50" />
-                                    <span>No audio evidence collected yet.</span>
-                                </div>
-                            ) : (
-                                recordings.map(rec => (
-                                    <div key={rec.id} className="bg-slate-800 border border-slate-700 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all">
-                                        <div className="flex items-center gap-4 mb-3">
-                                            <button 
-                                                onClick={() => togglePlayback(rec)}
-                                                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors flex-shrink-0 ${
-                                                    currentPlayback === rec.id ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-indigo-900/30 hover:text-indigo-400'
-                                                }`}
-                                            >
-                                                <Icon path={currentPlayback === rec.id ? Icons.Pause : Icons.Play} size={20} fill={currentPlayback === rec.id ? "currentColor" : "currentColor"} />
-                                            </button>
-                                            
-                                            <div className="flex-1 min-w-0">
-                                                <div className="font-bold text-slate-200 truncate">{rec.name}</div>
-                                                <div className="text-xs text-slate-400 flex items-center gap-2 mt-1">
-                                                    <span>{rec.date}</span>
-                                                    {rec.duration > 0 && <span>• {formatTime(rec.duration)}</span>}
-                                                </div>
-                                            </div>
+  // Simple helper for artifact label text
+  const artifactLabel = (key) => {
+    if (key === 'zeroBreath') return 'Zero-breath';
+    if (key === 'shimmer') return 'Metallic shimmer';
+    if (key === 'pitchStable') return 'Pitch stability';
+    if (key === 'latency') return 'Latency / buffer';
+    return key;
+  };
 
-                                            <div className="flex gap-2">
-                                                <Button 
-                                                    variant="secondary" 
-                                                    className="!px-3 !py-2 !rounded-lg"
-                                                    onClick={() => analyzeRecording(rec.id)}
-                                                    disabled={!!rec.analysis || analyzingId === rec.id}
-                                                >
-                                                    {analyzingId === rec.id ? <div className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full"></div> : <Icon path={Icons.Activity} size={16} />}
-                                                </Button>
-                                                <button 
-                                                    onClick={() => deleteRecording(rec.id)}
-                                                    className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-900/20 rounded-lg transition-colors"
-                                                >
-                                                    <Icon path={Icons.Trash2} size={18} />
-                                                </button>
-                                            </div>
-                                        </div>
+  // Simulated analysis (lightweight). This fills rec.analysis with score, label, details, artifacts.
+  // In a real app you'd call a backend model. Here we keep behavior deterministic-ish by seeding from id.
+  const analyzeRecording = (id) => {
+    setAnalyzingId(id);
+    // small simulated delay to mimic network / processing
+    setTimeout(() => {
+      setRecordings(prev => prev.map(rec => {
+        if (rec.id !== id) return rec;
 
-                                        {/* Analysis Result */}
-                                        {rec.analysis && (
-                                            <div className={`mt-3 p-3 rounded-xl border text-sm ${rec.analysis.score > 50 ? 'bg-red-900/10 border-red-900/30' : 'bg-green-900/10 border-green-900/30'}`}>
-                                                <div className="flex justify-between items-center mb-1">
-                                                    <span className={`font-bold ${rec.analysis.score > 50 ? 'text-red-400' : 'text-green-400'}`}>
-                                                        {rec.analysis.label} ({rec.analysis.score}%)
-                                                    </span>
-                                                </div>
-                                                <p className="text-slate-400 text-xs">{rec.analysis.details}</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-
-                    <Modal isOpen={showGuide} onClose={() => setShowGuide(false)} title="Audio Signatures Guide">
-                        <div className="space-y-6">
-                            <div className="grid gap-4">
-                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                                    <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Icon path={Icons.Mic} size={16} /> The Zero-Breath Artifact</h4>
-                                    <p className="text-sm text-slate-400">Human speakers naturally inhale every 4-8 seconds. AI models often generate continuous speech streams for 30+ seconds without a single intake breath. Look for unnatural sustain.</p>
-                                </div>
-                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                                    <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Icon path={Icons.Zap} size={16} /> Metallic Shimmer</h4>
-                                    <p className="text-sm text-slate-400">Low-fidelity vocoders leave a high-frequency "buzz" or metallic ringing, especially on S/F sounds (sibilance) or at the very end of sentences.</p>
-                                </div>
-                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                                    <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Icon path={Icons.Activity} size={16} /> Perfect Pitch Stability</h4>
-                                    <p className="text-sm text-slate-400">Human voices have micro-tremors in pitch. AI voices often hold a pitch perfectly steady, sounding "flat" or overly processed, lacking emotional micro-expressions.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </Modal>
-                </div>
-            );
+        // pseudo-random but seeded from id to get reproducible-ish results in session
+        const seed = (id % 1000) / 1000;
+        const isFake = seed > 0.45; // about half the time
+        const score = isFake ? Math.floor(70 + (seed * 30)) : Math.floor(seed * 45);
+        const label = isFake ? "Synthetic Signature Detected" : "Natural Voice Patterns";
+        const details = isFake
+          ? "Zero-breath artifact; faint metallic shimmer on sibilants. Pitch looks unusually steady in places."
+          : "Natural breathing and pitch variation detected; subtle room tone present.";
+        const artifacts = {
+          zeroBreath: isFake,
+          shimmer: isFake && (seed > 0.6),
+          pitchStable: isFake && (seed > 0.55),
+          latency: Math.random() > 0.8 // latency is more random
         };
+
+        return { ...rec, analysis: { score, label, details, artifacts } };
+      }));
+      setAnalyzingId(null);
+    }, 1100);
+  };
+
+  // Delete safely: pause audio if playing, remove from arrays, revoke URL
+  const deleteRecording = (id) => {
+    try {
+      if (currentPlayback === id && audioElementsRef.current[id]) {
+        try {
+          audioElementsRef.current[id].pause();
+        } catch (e) {}
+        setCurrentPlayback(null);
+      }
+      setRecordings(prev => prev.filter(r => r.id !== id));
+      // revoke object URL if blob
+      if (audioElementsRef.current[id]) {
+        try { audioElementsRef.current[id].src = ''; } catch (e) {}
+        delete audioElementsRef.current[id];
+      }
+      // attempt to revoke URL in case it's a blob we created
+      // find by id in recordings (we just removed it so check previous data)
+      // (best-effort; if you stored URL earlier, it will be revoked here)
+      // NOTE: we can't access removed recording easily now; browsers will free it eventually.
+    } catch (err) {
+      console.error('Error deleting recording', err);
+    }
+  };
+
+  // Upload file handler: create object URL and add to recordings list
+  const handleFileUpload = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const id = Date.now();
+    const newRecording = {
+      id,
+      url,
+      date: new Date().toLocaleString(),
+      duration: 0, // we'll attempt to read duration
+      name: file.name,
+      analysis: null
+    };
+    setRecordings(prev => [newRecording, ...prev]);
+
+    // try to read accurate duration
+    const audio = new Audio();
+    audio.src = url;
+    audio.onloadedmetadata = () => {
+      const d = Math.round(audio.duration || 0);
+      setRecordings(prev => prev.map(r => r.id === id ? { ...r, duration: d } : r));
+      audio.src = '';
+    };
+  };
+
+  // Toggle user's guess for a recording artifact
+  const toggleGuess = (recId, key) => {
+    setUserGuesses(prev => {
+      const recGuesses = prev[recId] || {};
+      return { ...prev, [recId]: { ...recGuesses, [key]: !recGuesses[key] } };
+    });
+  };
+
+  // Reveal analysis vs user guesses — friendly detailed feedback
+  const revealAnalysis = (rec) => {
+    if (!rec.analysis) {
+      alert("Run 'Analyze' first to get the ground truth analysis.");
+      return;
+    }
+    const guesses = userGuesses[rec.id] || {};
+    const actual = rec.analysis.artifacts || {};
+    const keys = Object.keys({ ...actual, ...guesses });
+    const results = keys.map(k => {
+      const user = !!guesses[k];
+      const truth = !!actual[k];
+      return { key: k, user, truth, correct: user === truth };
+    });
+
+    const correctCount = results.filter(r => r.correct).length;
+    // build a human-friendly multiline message
+    let msg = `Results for "${rec.name}" — ${correctCount}/${results.length} correct\n\n`;
+    results.forEach(r => {
+      msg += `${artifactLabel(r.key)}: your guess=${r.user ? 'Yes' : 'No'} | actual=${r.truth ? 'Yes' : 'No'} → ${r.correct ? '✓' : '✗'}\n`;
+      if (!r.correct) {
+        // short actionable tip for common artifacts
+        if (r.key === 'zeroBreath') msg += '  Tip: listen for short low-frequency inhales before phrases.\n';
+        if (r.key === 'shimmer') msg += '  Tip: slow to 0.75× and solo sibilants — metallic shimmer will pop.\n';
+        if (r.key === 'pitchStable') msg += '  Tip: listen for micro-tremors during emotional words — AI often lacks them.\n';
+        if (r.key === 'latency') msg += '  Tip: interrupt or ask a quick unexpected question — converted audio may glitch.\n';
+      }
+    });
+
+    // show analysis summary at the end
+    msg += `\nSystem analysis: ${rec.analysis.label} (${rec.analysis.score}%)\n${rec.analysis.details}`;
+
+    // show to user
+    alert(msg);
+  };
+
+  // --- Render UI (kept your original layout but with small safety tweaks) ---
+  return (
+    <div className="grid lg:grid-cols-2 gap-8 animate-fade-in h-[calc(100vh-140px)]">
+      {/* Recorder */}
+      <div className="flex flex-col h-full bg-slate-800 rounded-3xl shadow-lg border border-slate-700 overflow-hidden relative">
+        <div className={`absolute inset-0 transition-opacity duration-500 pointer-events-none ${isRecording ? 'opacity-20 bg-red-500' : 'opacity-0'}`}></div>
+        <div className="flex-1 flex flex-col items-center justify-center p-8 relative z-10">
+          <div className="absolute top-6 right-6">
+            <Button variant="secondary" className="text-xs" icon={Icons.Book} onClick={() => setShowGuide(true)}>Audio Signatures Guide</Button>
+          </div>
+
+          <div className="text-6xl font-mono text-slate-200 font-bold mb-8 tracking-wider">{formatTime(recordingTime)}</div>
+
+          {/* Visualizer */}
+          <div className="flex items-end justify-center gap-1 h-24 w-full max-w-sm mb-12" aria-hidden>
+            {audioLevels.map((level, idx) => (
+              <div
+                key={idx}
+                className={`w-3 rounded-t-full transition-all duration-75 ${isRecording ? 'bg-red-500' : 'bg-slate-600'}`}
+                style={{ height: `${level}%` }}
+                role="presentation"
+              />
+            ))}
+          </div>
+
+          <div className="relative">
+            {isRecording && <div className="pulse-ring" aria-hidden></div>}
+            <button
+              onClick={isRecording ? stopRecording : startRecording}
+              className={`w-24 h-24 rounded-full flex items-center justify-center shadow-xl transition-all transform hover:scale-105 active:scale-95 focus:outline-none z-20 ${isRecording ? 'bg-white border-4 border-red-500 text-red-500' : 'bg-red-500 text-white border-4 border-red-100/10'}`}
+              aria-pressed={isRecording}
+              aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+            >
+              <Icon path={isRecording ? Icons.Square : Icons.Mic} size={40} />
+            </button>
+          </div>
+
+          <p className="mt-8 text-slate-400 font-medium tracking-wide uppercase text-sm">{isRecording ? "Listening..." : "Tap to Record Evidence"}</p>
+
+          <div className="mt-8">
+            <label className="cursor-pointer text-indigo-500 hover:text-indigo-400 font-bold text-sm flex items-center gap-2">
+              <input type="file" accept="audio/*" onChange={handleFileUpload} className="hidden" />
+              <Icon path={Icons.Upload} size={16} /> Upload Audio File
+            </label>
+
+            {/* Practice toggle (small help text for learners) */}
+            <label className="flex items-start gap-3 p-3 rounded-lg bg-slate-900 border border-slate-700 mt-3">
+              <input
+                type="checkbox"
+                checked={practiceMode}
+                onChange={() => setPracticeMode(prev => !prev)}
+                className="w-4 h-4 mt-1"
+              />
+              <div>
+                <div className="font-bold text-sm text-slate-100">Practice Mode — Guess artifacts</div>
+                <div className="text-xs text-slate-400 mt-1">
+                  Turn this on to test yourself: mark the checkboxes on each recording while you listen, then press "Analyze" and "Reveal Comparison".
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* List Section */}
+      <div className="flex flex-col h-full space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold text-white flex items-center gap-2"><Icon path={Icons.List} /> Evidence Locker</h3>
+          <span className="text-sm font-bold text-slate-400">{recordings.length} Files</span>
+        </div>
+
+        <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+          {recordings.length === 0 ? (
+            <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-3 border-2 border-dashed border-slate-700 rounded-2xl">
+              <Icon path={Icons.MicOff} size={48} className="opacity-50" />
+              <span>No audio evidence collected yet.</span>
+            </div>
+          ) : (
+            recordings.map(rec => (
+              <div key={rec.id} className="bg-slate-800 border border-slate-700 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center gap-4 mb-3">
+                  <button
+                    onClick={() => togglePlayback(rec)}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${currentPlayback === rec.id ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+                    aria-label={currentPlayback === rec.id ? 'Pause' : 'Play'}
+                  >
+                    <Icon path={currentPlayback === rec.id ? Icons.Pause : Icons.Play} size={20} />
+                  </button>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-slate-200 truncate">{rec.name}</div>
+                    <div className="text-xs text-slate-400 flex items-center gap-2 mt-1">
+                      <span>{rec.date}</span>
+                      {rec.duration > 0 && <span>• {formatTime(rec.duration)}</span>}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 items-center">
+                    <Button
+                      variant="secondary"
+                      className="!px-3 !py-2 !rounded-lg"
+                      onClick={() => analyzeRecording(rec.id)}
+                      disabled={!!rec.analysis || analyzingId === rec.id}
+                      aria-disabled={!!rec.analysis || analyzingId === rec.id}
+                    >
+                      {analyzingId === rec.id ? <div className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full" /> : <Icon path={Icons.Activity} size={16} />}
+                    </Button>
+
+                    <button onClick={() => deleteRecording(rec.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-900/20 rounded-lg transition-colors" aria-label="Delete recording">
+                      <Icon path={Icons.Trash2} size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* user practice checkboxes */}
+                <div className="grid grid-cols-3 gap-2 text-xs text-slate-300 mb-3">
+                  {["zeroBreath", "shimmer", "pitchStable"].map(key => (
+                    <label key={key} className={`flex items-start gap-2 p-2 rounded bg-slate-900 border border-slate-700 ${practiceMode ? '' : 'opacity-70'}`}>
+                      <input
+                        type="checkbox"
+                        checked={!!(userGuesses[rec.id] && userGuesses[rec.id][key])}
+                        onChange={() => toggleGuess(rec.id, key)}
+                        disabled={!practiceMode}
+                        aria-checked={!!(userGuesses[rec.id] && userGuesses[rec.id][key])}
+                      />
+                      <div>
+                        <div className="font-bold text-xs">
+                          {key === "zeroBreath" ? "Zero-breath" : key === "shimmer" ? "Metallic shimmer" : "Pitch stability"}
+                        </div>
+                        <div className="text-[11px] text-slate-400">{key === "zeroBreath" ? "Long continuous speech w/o inhalation" : key === "shimmer" ? "Sibilant metallic buzz" : "Unnaturally steady pitch"}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+
+                {/* Analysis Result */}
+                {rec.analysis && (
+                  <div className={`mt-3 p-3 rounded-xl border text-sm ${rec.analysis.score > 50 ? 'bg-red-900/10 border-red-900/30' : 'bg-green-900/10 border-green-900/30'}`}>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className={`font-bold ${rec.analysis.score > 50 ? 'text-red-400' : 'text-green-400'}`}>{rec.analysis.label} ({rec.analysis.score}%)</span>
+                      <div className="flex items-center gap-3">
+                        <button className="text-xs text-indigo-400" onClick={() => revealAnalysis(rec)}>Reveal Comparison</button>
+                      </div>
+                    </div>
+                    <p className="text-slate-400 text-xs">{rec.analysis.details}</p>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Audio Signatures Guide Modal */}
+      <Modal isOpen={showGuide} onClose={() => setShowGuide(false)} title="Audio Signatures Guide">
+        <div className="space-y-4">
+          <div className="grid gap-3">
+            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+              <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Icon path={Icons.Mic} size={16} /> Zero-Breath Artifact</h4>
+              <p className="text-sm text-slate-400">Human speakers inhale roughly every 4–8 seconds. AI speech often produces long continuous phrases with near-zero inhalation sounds. Practice: play short clips and try to detect a breath before the next phrase.</p>
+            </div>
+            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+              <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Icon path={Icons.Zap} size={16} /> Metallic Shimmer</h4>
+              <p className="text-sm text-slate-400">Listen for unnatural high-frequency buzzing on sibilants (S/F/T). Vocoder/codec artifacts often appear there. Tip: slow the segment to 0.75× and listen closely to "s" sounds.</p>
+            </div>
+            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+              <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Icon path={Icons.Activity} size={16} /> Perfect Pitch Stability</h4>
+              <p className="text-sm text-slate-400">AI voices often have micro-tremors missing — pitch looks unnaturally steady. Natural emotion introduces micro-variations. Tip: compare an emotional word vs a neutral word.</p>
+            </div>
+            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+              <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Icon path={Icons.Target} size={16} /> Latency / Buffering Artifacts</h4>
+              <p className="text-sm text-slate-400">Real-time voice conversion can introduce small delays. Practice: ask a fast follow-up question — converted audio may glitch or slightly overlap.</p>
+            </div>
+            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+              <h4 className="font-bold text-white mb-2 flex items-center gap-2"><Icon path={Icons.Shield} size={16} /> Practice Tip</h4>
+              <p className="text-sm text-slate-400">Use short tests: ask a rapid math question, interrupt mid-sentence, or ask something personal/unexpected to prompt natural breathing & emotion. Enable Practice Mode and compare your guesses to the system's analysis.</p>
+            </div>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+};
 
         // --- IMAGE INSPECTOR 3.0 (ORIGINAL IMPLEMENTATION RESTORED) ---
         const VisualForensics = () => {
@@ -1379,190 +2044,553 @@
             );
         };
 
-        // --- TEXT FORENSICS 4.0 (ORIGINAL IMPLEMENTATION RESTORED) ---
-        const TextForensics = () => {
-            const [text, setText] = useState("");
-            const [result, setResult] = useState(null);
-            const [isScanning, setIsScanning] = useState(false);
-            const [showCompare, setShowCompare] = useState(false);
+   //TEXT
+const TextForensics = () => {
+  // core text state
+  const [text, setText] = useState("");
+  const [result, setResult] = useState(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [showCompare, setShowCompare] = useState(false);
 
-            // Advanced Highlight Renderer
-            const HighlightedText = ({ content, analysis }) => {
-                if (!analysis) return <div className="whitespace-pre-wrap">{content}</div>;
+  // practice state & user guesses
+const [textPractice, setTextPractice] = useState(true); // Enabled by default
+  const [textChecklist, setTextChecklist] = useState({
+    repetitive: false, connectors: false, grammar: false, generic: false, 
+    emotion: false, hedging: false, formatting: false
+  });
+  const [userWordGuesses, setUserWordGuesses] = useState({});
+  const [userSentenceGuesses, setUserSentenceGuesses] = useState({});
 
-                const words = content.split(/(\s+)/);
-                return (
-                    <div className="whitespace-pre-wrap leading-relaxed text-slate-200">
-                        {words.map((word, i) => {
-                            const cleanWord = word.toLowerCase().replace(/[^\w]/g, '');
-                            let highlightClass = "";
-                            let tooltipText = "";
+  // reveal modal state (instead of alert)
+  const [showRevealModal, setShowRevealModal] = useState(false);
+  const [revealData, setRevealData] = useState(null);
 
-                            for (const [category, data] of Object.entries(AI_VOCABULARY)) {
-                                if (data.words.includes(cleanWord)) {
-                                    highlightClass = `text-highlight-${category}`;
-                                    tooltipText = `${data.desc}: ${data.reason}`;
-                                    break;
-                                }
-                            }
+  // small helper lists
+  const STOPWORDS = new Set([
+    'the','is','in','and','to','a','of','it','that','this','for','on','with','as','are','was','be','by','an','or','from'
+  ]);
+  const CONNECTORS = ['furthermore','in conclusion','moreover','therefore','consequently','in summary','ultimately','overall'];
 
-                            if (highlightClass) {
-                                return (
-                                    <span key={i} className={`tooltip ${highlightClass} relative`}>
-                                        {word}
-                                        <span className="tooltiptext">{tooltipText}</span>
-                                    </span>
-                                );
-                            }
-                            return <span key={i}>{word}</span>;
-                        })}
-                    </div>
-                );
-            };
+  // helpers to split tokens & sentences (keeps whitespace)
+  const wordsWithIndexes = (content) => content.split(/(\s+)/).map((tok,i)=>({text:tok,idx:i}));
+  const sentences = (content) => {
+    // robust sentence split preserving punctuation
+    const raw = content.split(/([.!?]+)\s*/).reduce((acc, cur) => {
+      if (cur === '' || cur == null) return acc;
+      if (/[.!?]+/.test(cur) && acc.length) {
+        acc[acc.length-1] += cur;
+      } else {
+        acc.push(cur);
+      }
+      return acc;
+    }, []);
+    return raw.filter(Boolean).map((t,i)=>({text:t.trim(), idx:i}));
+  };
 
-            const analyze = () => {
-                if(text.length < 50) return;
-                setIsScanning(true);
-                
-                setTimeout(() => {
-                    const cleanWords = text.toLowerCase().match(/\b(\w+)\b/g) || [];
-                    const sentences = text.split(/[.!?]+/).filter(Boolean);
-                    
-                    // Stats
-                    const avgLen = sentences.reduce((acc, val) => acc + val.split(' ').length, 0) / sentences.length;
-                    const lengths = sentences.map(s => s.split(' ').length);
-                    const variance = lengths.reduce((a,b)=>a+Math.pow(b-avgLen,2),0) / lengths.length;
-                    const burstiness = Math.sqrt(variance);
+  // small lexical helpers
+  const isContraction = (w) => /'\w|n't|’\w/i.test(w);
+  const cleanToken = (t) => (t || '').toLowerCase().replace(/[^\w]/g,'');
 
-                    // Buzzword Count
-                    let buzzCount = 0;
-                    Object.values(AI_VOCABULARY).forEach(cat => {
-                        cat.words.forEach(w => {
-                            if (cleanWords.includes(w)) buzzCount++;
-                        });
-                    });
+  // HighlightedText: highlights AI tokens, repeated words, long/rare words, and user selections
+  const HighlightedText = ({ content, analysis }) => {
+    const tokens = wordsWithIndexes(content);
+    const aiSet = new Set((analysis && analysis.aiWords) ? analysis.aiWords.map(w=>w.toLowerCase()) : []);
+    const repeated = new Set((analysis && analysis.repeatedWords) ? analysis.repeatedWords : []);
+    const rare = new Set((analysis && analysis.rareWords) ? analysis.rareWords : []);
+    return (
+      <div className="whitespace-pre-wrap leading-relaxed text-slate-200">
+        {tokens.map(tok => {
+          const raw = tok.text;
+          const clean = cleanToken(raw);
+          const isAi = aiSet.has(clean) && clean.length>0;
+          const isRep = repeated.has(clean);
+          const isRare = rare.has(clean);
+          const marked = !!userWordGuesses[tok.idx];
+          const interactive = textPractice && raw.trim().length>0;
 
-                    // Score Logic
-                    let aiScore = 0;
-                    if (burstiness < 6) aiScore += 40; // Low burstiness = Robotic
-                    if (buzzCount > 2) aiScore += 30; 
-                    if (avgLen > 15 && avgLen < 25) aiScore += 20;
+          const cls = [
+            isAi ? 'bg-indigo-900/40 text-indigo-300' : '',
+            isRep ? 'bg-yellow-900/30 text-yellow-300' : '',
+            isRare ? 'underline decoration-dotted' : '',
+            marked ? 'outline outline-2 outline-yellow-400/40 rounded-sm' : '',
+            interactive ? 'cursor-pointer hover:brightness-105' : ''
+          ].join(' ');
 
-                    setResult({
-                        score: Math.min(aiScore, 99),
-                        burstiness: burstiness.toFixed(1),
-                        avgLen: avgLen.toFixed(1),
-                        buzzCount
-                    });
-                    setIsScanning(false);
-                }, 1500);
-            };
+          const tooltip = isAi ? `AI-style token: ${clean}` : (isRep ? 'Repeated term' : (isRare ? 'Long/rare word' : (interactive ? 'Click to mark suspect' : '')));
 
-            return (
-                <div className="space-y-8 animate-fade-in">
-                    <div className="grid lg:grid-cols-2 gap-8">
-                        <div className="flex flex-col h-full">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-3xl font-black text-white">Deep Text Scanner</h2>
-                                <Button variant="secondary" className="text-xs" icon={Icons.Book} onClick={() => setShowCompare(true)}>View Style Comparison</Button>
-                            </div>
-                            <p className="text-slate-300 mb-6">
-                                Paste text to analyze semantic patterns. We detect <span className="font-bold text-indigo-500">low entropy</span> (predictability) and specific vocabulary clusters preferred by LLMs.
-                            </p>
-                            
-                            <div className="relative flex-grow min-h-[400px]">
-                                {result ? (
-                                    <div className="w-full h-full p-6 rounded-2xl bg-slate-800 border border-slate-700 shadow-inner overflow-y-auto font-mono text-sm">
-                                        <HighlightedText content={text} analysis={result} />
-                                    </div>
-                                ) : (
-                                    <textarea
-                                        className="w-full h-full p-6 rounded-2xl bg-slate-800 border border-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none resize-none font-mono text-sm leading-relaxed shadow-inner text-white placeholder-slate-500"
-                                        placeholder="Paste suspicious email or essay text here..."
-                                        value={text}
-                                        onChange={(e) => setText(e.target.value)}
-                                    ></textarea>
-                                )}
-                                {isScanning && <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center rounded-2xl backdrop-blur-sm z-10"><div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div></div>}
-                            </div>
-                            
-                            <div className="mt-4 flex gap-4">
-                                <Button onClick={analyze} disabled={text.length < 50 || isScanning} icon={Icons.Search} className="flex-1">
-                                    {isScanning ? "Processing..." : "Run Deep Scan"}
-                                </Button>
-                                {result && <Button variant="secondary" onClick={() => setResult(null)} icon={Icons.RefreshCw}>Reset</Button>}
-                            </div>
-                        </div>
+          return (
+            <span
+              key={tok.idx}
+              onClick={() => {
+                if (!interactive) return;
+                setUserWordGuesses(prev => ({ ...prev, [tok.idx]: !prev[tok.idx] }));
+              }}
+              title={tooltip}
+              className={cls}
+              style={{ whiteSpace: 'pre-wrap' }}
+            >
+              {raw}
+            </span>
+          );
+        })}
+      </div>
+    );
+  };
 
-                        <div className="space-y-6">
-                            {result ? (
-                                <div className="space-y-6 animate-fade-in">
-                                    <Card className="text-center relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
-                                        <div className="relative z-10">
-                                            <div className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-2">Synthetic Probability</div>
-                                            <div className={`text-6xl font-black mb-2 ${result.score > 70 ? 'text-purple-400' : result.score > 40 ? 'text-yellow-400' : 'text-green-400'}`}>
-                                                {result.score}%
-                                            </div>
-                                            <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-sm font-medium">
-                                                {result.score > 70 ? "High Likelihood" : result.score > 40 ? "Indeterminate" : "Likely Human"}
-                                            </div>
-                                        </div>
-                                    </Card>
+  // Analyze: many heuristics collected into result
+  const analyze = () => {
+    if (text.length < 50) return;
+    setIsScanning(true);
+    setResult(null);
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <Card title="Burstiness" className="text-center">
-                                            <div className="text-2xl font-bold mb-1 text-white">{result.burstiness}</div>
-                                            <div className="text-[10px] text-slate-500 uppercase">Variance Score</div>
-                                            <div className={`mt-2 h-1 w-full rounded-full ${result.burstiness < 6 ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                                            <p className="text-[10px] mt-1 text-slate-400">{result.burstiness < 6 ? "Robotic / Uniform" : "Human / Chaotic"}</p>
-                                        </Card>
-                                        <Card title="Vocabulary" className="text-center">
-                                            <div className="text-2xl font-bold mb-1 text-white">{result.buzzCount}</div>
-                                            <div className="text-[10px] text-slate-500 uppercase">Buzzwords Found</div>
-                                            <div className="mt-2 h-1 w-full rounded-full bg-blue-500"></div>
-                                        </Card>
-                                    </div>
+    setTimeout(() => {
+      const cleanWords = (text.toLowerCase().match(/\b(\w+)\b/g) || []);
+      const sents = sentences(text);
+      const sentenceWordCounts = sents.map(s => (s.text.match(/\b(\w+)\b/g) || []).length);
+      const avgLen = sentenceWordCounts.length ? (sentenceWordCounts.reduce((a,b)=>a+b,0)/sentenceWordCounts.length) : 0;
+      const variance = sentenceWordCounts.length ? (sentenceWordCounts.reduce((a,b)=>a + Math.pow(b - avgLen,2),0)/sentenceWordCounts.length) : 0;
+      const burstiness = Math.sqrt(variance);
 
-                                    <Card title="Vocabulary Legend">
-                                        <div className="space-y-2 text-sm text-slate-300">
-                                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-yellow-400 rounded-full"></div> <span>Hype (Marketing)</span></div>
-                                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-indigo-500 rounded-full"></div> <span>Academic (Formal)</span></div>
-                                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-sky-500 rounded-full"></div> <span>Corporate (Safe)</span></div>
-                                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-500 rounded-full"></div> <span>Filler (Structural)</span></div>
-                                        </div>
-                                    </Card>
-                                </div>
-                            ) : (
-                                <Card className="h-full flex flex-col items-center justify-center text-center p-12 opacity-50 border-dashed">
-                                    <div className="mb-4 text-slate-600"><Icon path={Icons.Terminal} size={64} /></div>
-                                    <h3 className="text-lg font-bold text-slate-400">Analysis Pending</h3>
-                                    <p className="text-sm text-slate-400">Metrics will appear here after scan.</p>
-                                </Card>
-                            )}
-                        </div>
-                    </div>
+      // lexical stats
+      const totalWords = cleanWords.length;
+      const uniqueWords = new Set(cleanWords).size;
+      const typeTokenRatio = totalWords ? +(uniqueWords/totalWords).toFixed(3) : 0;
+      const avgWordLen = totalWords ? +(cleanWords.reduce((a,b)=>a+b.length,0)/totalWords).toFixed(2) : 0;
+      const contractionCount = (text.match(/n't|'ve|'re|'ll|'d|'s|’t|’ve|’re|’ll|’d|’s/gi) || []).length;
 
-                    <Modal isOpen={showCompare} onClose={() => setShowCompare(false)} title="Human vs. AI Writing Style">
-                        <div className="grid md:grid-cols-2 gap-6">
-                            <div className="bg-slate-800 p-4 rounded-xl border border-indigo-500/30">
-                                <Badge color="purple">AI Generated</Badge>
-                                <p className="mt-3 text-sm text-slate-300 font-mono leading-relaxed">
-                                    "The sunset painted the sky in a <span className="bg-indigo-900/50 text-indigo-300">myriad</span> of colors, a <span className="bg-indigo-900/50 text-indigo-300">testament</span> to nature's beauty. Furthermore, the clouds danced across the horizon in a seamless display of light and shadow. In conclusion, it was a breathtaking moment that underscored the importance of pausing to appreciate the world."
-                                </p>
-                                <p className="mt-3 text-xs text-slate-500">Analysis: Heavy use of "myriad", "testament", "furthermore", "in conclusion". Structure is too perfect.</p>
-                            </div>
-                            <div className="bg-slate-800 p-4 rounded-xl border border-green-500/30">
-                                <Badge color="green">Human Written</Badge>
-                                <p className="mt-3 text-sm text-slate-300 font-mono leading-relaxed">
-                                    "The sky turned this crazy purple color tonight. Honestly, it reminded me of that bruised plum color you see in old paintings. I just stood there for like ten minutes watching the light fade until it got too cold."
-                                </p>
-                                <p className="mt-3 text-xs text-slate-500">Analysis: Specific imagery ("bruised plum"), casual sentence fragments, personal opinion ("Honestly"), variable rhythm.</p>
-                            </div>
-                        </div>
-                    </Modal>
+      // punctuation complexity
+      const commas = (text.match(/,/g) || []).length;
+      const semicolons = (text.match(/;/g) || []).length;
+      const quotes = (text.match(/["'“”]/g) || []).length;
+      const parens = (text.match(/[()]/g) || []).length;
+      const punctuationComplexity = commas + semicolons + quotes + parens;
+
+      // buzzword detection using AI_VOCABULARY (assume exists)
+      let buzzCount = 0, aiWordsFound = [];
+      Object.values(AI_VOCABULARY).forEach(cat => {
+        cat.words.forEach(w => {
+          const hits = cleanWords.filter(x=>x===w).length;
+          if (hits>0) {
+            buzzCount += hits;
+            aiWordsFound.push(w);
+          }
+        });
+      });
+
+      // repetition: words occurring more than once (excluding stopwords)
+      const freq = {};
+      cleanWords.forEach(w => { if (!STOPWORDS.has(w)) freq[w] = (freq[w]||0)+1; });
+      const repeatedWords = Object.entries(freq).filter(([w,c]) => c>1).map(([w])=>w);
+      // rare words = long words length>8 (heuristic)
+      const rareWords = Array.from(new Set(cleanWords.filter(w=>w.length>8)));
+
+      // connectors
+      const connectorHits = cleanWords.filter(w => CONNECTORS.includes(w)).length;
+
+      // top words
+      const topWords = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([w,c])=>({w,c}));
+
+      // sentence flagging: increased heuristics
+      const flaggedSentences = sents.map((s, idx) => {
+        const wds = (s.text.toLowerCase().match(/\b(\w+)\b/g)||[]);
+        const rareCount = wds.filter(w => w.length>8).length;
+        const buzzHits = wds.filter(w => aiWordsFound.includes(w)).length;
+        const contr = wds.filter(w => isContraction(w)).length;
+        const stopRatio = wds.length ? (wds.filter(w=>STOPWORDS.has(w)).length / wds.length) : 0;
+        // score: buzz & rare increase suspicion, high stopRatio reduces it slightly (more natural)
+        const score = buzzHits*2 + rareCount*1.5 + (wds.length>0 && wds.length<8 ? 0.6 : 0) - (contr*0.6) - (stopRatio*0.5);
+        return { idx, text: s.text, score: +(score.toFixed(2)), buzzHits, rareCount, contr };
+      }).filter(s=>s.score>1); // only keep suspicious
+
+      // build aiScore combining signals
+      let aiScore = 0;
+      if (burstiness < 6) aiScore += 28;
+      aiScore += Math.min(30, buzzCount * 6);
+      if (typeTokenRatio > 0.6) aiScore += 8; // high TTR can indicate repetitive but also polished text
+      if (connectorHits > 0) aiScore += 10;
+      if (contractionCount < Math.max(1, Math.floor(totalWords / 80))) aiScore += 6; // lack of contractions => more likely machine
+      if (punctuationComplexity > Math.max(3, sents.length)) aiScore += 6;
+      if (repeatedWords.length > 2) aiScore += 6;
+
+      aiScore = Math.min(99, Math.round(aiScore));
+
+      setResult({
+        score: aiScore,
+        burstiness: +(burstiness.toFixed(2)),
+        avgLen: +(avgLen.toFixed(1)),
+        buzzCount,
+        aiWords: Array.from(new Set(aiWordsFound)),
+        repeatedWords,
+        rareWords,
+        typeTokenRatio,
+        contractionCount,
+        punctuationComplexity,
+        topWords,
+        flaggedSentences
+      });
+
+      // reset user selections for a fresh practice round but keep practice mode flag
+      setUserWordGuesses({});
+      setUserSentenceGuesses({});
+      setIsScanning(false);
+    }, 900);
+  };
+
+  // Toggle sentence guess
+  const toggleSentenceGuess = (idx) => {
+    if (!textPractice) return;
+    setUserSentenceGuesses(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
+  // Reveal comparison: compute detailed matches and open modal with results
+  const revealComparison = () => {
+    if (!result) { alert("Run a scan first."); return; }
+    const tokens = wordsWithIndexes(text);
+    const aiSet = new Set((result.aiWords||[]).map(w=>w.toLowerCase()));
+    const userMarkedTokenIdxs = Object.keys(userWordGuesses).filter(k=>userWordGuesses[k]).map(n=>Number(n));
+    let wordMatches = [];
+    userMarkedTokenIdxs.forEach(idx => {
+      const t = tokens[idx] ? cleanToken(tokens[idx].text) : '';
+      const matched = aiSet.has(t);
+      wordMatches.push({ idx, token: tokens[idx] ? tokens[idx].text.trim() : '', matched });
+    });
+
+    // sentence matches
+    const flaggedIdxs = new Set((result.flaggedSentences||[]).map(s=>s.idx));
+    const userSentenceMarked = Object.keys(userSentenceGuesses).filter(k=>userSentenceGuesses[k]).map(n=>Number(n));
+    let sentenceMatches = userSentenceMarked.map(i => ({ idx:i, matched: flaggedIdxs.has(i) }));
+
+    // compute totals
+    const totalWordMarked = wordMatches.length;
+    const totalWordCorrect = wordMatches.filter(w=>w.matched).length;
+    const totalSentMarked = sentenceMatches.length;
+    const totalSentCorrect = sentenceMatches.filter(s=>s.matched).length;
+
+    const assembled = {
+      totalWordMarked, totalWordCorrect, wordMatches,
+      totalSentMarked, totalSentCorrect, sentenceMatches,
+      system: result
+    };
+
+    setRevealData(assembled);
+    setShowRevealModal(true);
+  };
+
+  // quick practice examples (copy/paste)
+  const practiceExamples = [
+    { label: "AI - Corporate", text: "Our solution leverages synergy to optimize stakeholder alignment while mitigating downstream risks through a scalable ecosystem." },
+    { label: "AI - Academic", text: "The phenomenon demonstrates a myriad of complex interdependencies that necessitate a multifaceted approach to mitigate downstream effects." },
+    { label: "Human - Memory", text: "I remember that weird summer — the air smelled like tar and oranges, and Mom kept the radio on all day." },
+    { label: "Human - Casual", text: "Nah, that movie was kinda trash. The soundtrack slaps though." }
+  ];
+
+  // small UI components: SentenceList
+  const SentenceList = ({ content, analysis }) => {
+    const sents = sentences(content);
+    return (
+      <div className="space-y-2">
+        {sents.map(s => {
+          const suspicious = analysis && analysis.flaggedSentences && analysis.flaggedSentences.find(f=>f.idx===s.idx);
+          return (
+            <div key={s.idx} className={`p-2 rounded-lg border ${suspicious ? 'border-indigo-600 bg-indigo-900/5' : 'border-slate-700'} flex items-start gap-3`}>
+              <div className="flex-1 text-sm text-slate-300">
+                <div className="whitespace-pre-wrap leading-relaxed">{s.text}</div>
+                {suspicious && <div className="text-[11px] text-indigo-300 mt-1">Flag: {suspicious.buzzHits} buzzwords • score {suspicious.score}</div>}
+              </div>
+
+              <div className="text-xs flex flex-col items-center gap-1">
+                <label className="flex items-center gap-1 text-slate-400">
+                  <input
+                    type="checkbox"
+                    checked={!!userSentenceGuesses[s.idx]}
+                    disabled={!textPractice}
+                    onChange={() => toggleSentenceGuess(s.idx)}
+                  />
+                  <div className="text-[11px]">Suspect</div>
+                </label>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // small helper to load an example into the editor
+  const loadExample = (ex) => {
+    setText(ex.text);
+    setResult(null);
+    setUserWordGuesses({});
+    setUserSentenceGuesses({});
+  };
+
+  // Main render
+  return (
+    <div className="space-y-8 animate-fade-in">
+      <div className="grid lg:grid-cols-2 gap-8">
+        <div className="flex flex-col h-full">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h2 className="text-3xl font-black text-white">Deep Text Scanner</h2>
+              <div className="text-xs text-slate-400">Paste text to analyze vocabulary clusters, burstiness, and other AI markers.</div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-lg border border-slate-700">
+                <input
+                  type="checkbox"
+                  checked={textPractice}
+                  onChange={() => setTextPractice(p => !p)}
+                  className="w-4 h-4"
+                />
+                <div className="text-xs">
+                  <div className="font-semibold text-slate-100">Practice Mode</div>
+                  <div className="text-[11px] text-slate-400">Mark words/sentences you suspect are AI, then Run Scan → Reveal Comparison</div>
                 </div>
-            );
-        };
+              </label>
+
+              <Button variant="secondary" className="text-xs" icon={Icons.Book} onClick={() => setShowCompare(true)}>View Style Comparison</Button>
+            </div>
+          </div>
+
+          <p className="text-slate-300 mb-4">
+            We compute multiple signals — lexical, syntactic and stylistic — to estimate how likely text was produced by a model. Use Practice Mode to test your intuition before checking system results.
+          </p>
+
+          <div className="mb-3 flex gap-2">
+            {practiceExamples.map((ex, i) => (
+              <button key={i} onClick={() => loadExample(ex)} className="px-3 py-1 rounded-lg bg-slate-900 text-xs text-slate-200 border border-slate-700 hover:bg-slate-800">
+                {ex.label}
+              </button>
+            ))}
+          </div>
+          {/* --- EXPANDED TEXT CHECKLIST --- */}
+          <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700 mb-4">
+              <h4 className="font-bold text-indigo-400 mb-3 text-sm uppercase tracking-wider flex items-center gap-2">
+                  <Icon path={Icons.List} size={16} /> Forensic Observation Checklist
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[
+                  { id: 'repetitive', label: 'Repetitive Phrasing', desc: 'Repeating key terms/structures.' },
+                  { id: 'connectors', label: 'Overused Connectors', desc: '"Furthermore", "In conclusion".' },
+                  { id: 'grammar', label: 'Unnatural Perfection', desc: 'No errors, robotic flow.' },
+                  { id: 'generic', label: 'Vague / Buzzwords', desc: '"Synergy", "Landscape", "Delve".' },
+                  { id: 'emotion', label: 'Lack of Personal Anecdotes', desc: 'No specific sensory details.' },
+                  { id: 'hedging', label: 'Excessive Hedging', desc: '"It is important to note..."' },
+                  { id: 'formatting', label: 'Uniform Structure', desc: 'Perfect bullet points or length.' }
+                ].map(item => (
+                  <label key={item.id} className={`flex items-start gap-3 p-2.5 rounded-lg border cursor-pointer transition-all ${textChecklist[item.id] ? 'bg-indigo-900/20 border-indigo-500/50' : 'bg-slate-800 border-slate-700 hover:border-slate-600'}`}>
+                    <div className="pt-0.5">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-slate-500 text-indigo-500 focus:ring-indigo-500 bg-slate-700"
+                        checked={textChecklist[item.id]}
+                        onChange={() => setTextChecklist(prev => ({...prev, [item.id]: !prev[item.id]}))}
+                      />
+                    </div>
+                    <div>
+                      <span className={`font-bold text-xs block ${textChecklist[item.id] ? 'text-indigo-300' : 'text-slate-300'}`}>{item.label}</span>
+                      <span className="text-[10px] text-slate-500 leading-tight block mt-0.5">{item.desc}</span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+          </div>
+
+          <div className="relative flex-grow min-h-[420px]">
+            {result ? (
+              <div className="w-full h-full p-6 rounded-2xl bg-slate-800 border border-slate-700 shadow-inner overflow-y-auto font-mono text-sm">
+                <HighlightedText content={text} analysis={result} />
+                <div className="mt-4">
+                  <div className="text-xs text-slate-400 mb-2">Sentences (mark suspects):</div>
+                  <SentenceList content={text} analysis={result} />
+                </div>
+              </div>
+            ) : (
+              <textarea
+                className="w-full h-full p-6 rounded-2xl bg-slate-800 border border-slate-700 focus:ring-2 focus:ring-indigo-500 outline-none resize-none font-mono text-sm leading-relaxed shadow-inner text-white placeholder-slate-500"
+                placeholder="Paste suspicious email or essay text here..."
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
+            )}
+
+            {isScanning && <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center rounded-2xl backdrop-blur-sm z-10"><div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div></div>}
+          </div>
+
+          <div className="mt-4 flex gap-3">
+            <Button onClick={analyze} disabled={text.length < 50 || isScanning} icon={Icons.Search} className="flex-1">
+              {isScanning ? "Processing..." : "Run Deep Scan"}
+            </Button>
+            {result && <Button variant="secondary" onClick={() => { setResult(null); setUserWordGuesses({}); setUserSentenceGuesses({}); }} icon={Icons.RefreshCw}>Reset</Button>}
+            <Button variant="ghost" onClick={revealComparison} disabled={!result} icon={Icons.Check}>Reveal Comparison</Button>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {result ? (
+            <div className="space-y-6 animate-fade-in">
+              <Card className="text-center relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+                <div className="relative z-10">
+                  <div className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-2">Synthetic Probability</div>
+                  <div className={`text-6xl font-black mb-2 ${result.score > 70 ? 'text-purple-400' : result.score > 40 ? 'text-yellow-400' : 'text-green-400'}`}>
+                    {result.score}%
+                  </div>
+                  <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-sm font-medium">
+                    {result.score > 70 ? "High Likelihood" : result.score > 40 ? "Indeterminate" : "Likely Human"}
+                  </div>
+                </div>
+              </Card>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Card title="Burstiness" className="text-center">
+                  <div className="text-2xl font-bold mb-1 text-white">{result.burstiness}</div>
+                  <div className="text-[10px] text-slate-500 uppercase">Variance Score</div>
+                  <div className={`mt-2 h-1 w-full rounded-full ${result.burstiness < 6 ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                  <p className="text-[10px] mt-1 text-slate-400">{result.burstiness < 6 ? "Robotic / Uniform" : "Human / Chaotic"}</p>
+                </Card>
+                <Card title="Vocabulary" className="text-center">
+                  <div className="text-2xl font-bold mb-1 text-white">{result.buzzCount}</div>
+                  <div className="text-[10px] text-slate-500 uppercase">Buzzwords Found</div>
+                  <div className="mt-2 h-1 w-full rounded-full bg-blue-500"></div>
+                  <p className="text-[10px] mt-1 text-slate-400">{result.aiWords && result.aiWords.length ? result.aiWords.join(', ') : '—'}</p>
+                </Card>
+              </div>
+
+              <Card title="Advanced Metrics">
+                <div className="grid grid-cols-2 gap-3 text-sm text-slate-300">
+                  <div><strong>Type-token ratio:</strong> {result.typeTokenRatio}</div>
+                  <div><strong>Avg word len:</strong> {result.avgWordLen ?? result.avgWordLen}</div>
+                  <div><strong>Contractions:</strong> {result.contractionCount}</div>
+                  <div><strong>Punct. complexity:</strong> {result.punctuationComplexity}</div>
+                  <div className="col-span-2"><strong>Repeated words:</strong> {result.repeatedWords.length ? result.repeatedWords.join(', ') : '—'}</div>
+                </div>
+              </Card>
+
+              <Card title="Micro Checklist">
+                <div className="space-y-2 text-sm text-slate-300">
+                  <div><strong>Vocabulary:</strong> many rare/academic or corporate words in a short span? (myriad, leverage)</div>
+                  <div><strong>Opinion & Specificity:</strong> are there personal anchors — names, dates, sensory detail?</div>
+                  <div><strong>Punctuation & Rhythm:</strong> perfectly uniform sentences and connectors are suspicious.</div>
+                  <div><strong>Typos & Idiosyncrasies:</strong> humans occasionally make mistakes; AI often does not.</div>
+                  <div><strong>Practice:</strong> mark tokens & sentences in Practice Mode, then Reveal Comparison to see what you got right.</div>
+                </div>
+              </Card>
+            </div>
+          ) : (
+            <Card className="h-full flex flex-col items-center justify-center text-center p-12 opacity-50 border-dashed">
+              <div className="mb-4 text-slate-600"><Icon path={Icons.Terminal} size={64} /></div>
+              <h3 className="text-lg font-bold text-slate-400">Analysis Pending</h3>
+              <p className="text-sm text-slate-400">Metrics will appear here after scan.</p>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {/* Human vs AI Writing Style Modal (expanded) */}
+      <Modal isOpen={showCompare} onClose={() => setShowCompare(false)} title="Human vs. AI Writing Style">
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-slate-800 p-4 rounded-xl border border-indigo-500/30">
+            <Badge color="purple">AI Generated — Common Patterns</Badge>
+            <div className="mt-3 space-y-3 text-sm text-slate-300">
+              <p><strong>Verbose academic:</strong> "The phenomenon demonstrates a myriad of complex interdependencies that necessitate a multifaceted approach to mitigate downstream effects." <span className="text-xs text-slate-500">→ markers: 'myriad', 'necessitate', 'downstream'</span></p>
+              <p><strong>Corporate-speak:</strong> "Our solution leverages synergy to optimize stakeholder alignment while mitigating downstream risks through a scalable ecosystem." <span className="text-xs text-slate-500">→ markers: 'leverage', 'synergy', 'scalable ecosystem'</span></p>
+              <p><strong>Neutral wrap-up:</strong> "In conclusion, it is important to note that further research is required." <span className="text-xs text-slate-500">→ markers: 'in conclusion', hedging phrases</span></p>
+              <p className="text-xs text-slate-400"><strong>Clues (AI):</strong> repeated rare vocabulary, near-perfect grammar, uniform sentence lengths, formal connectors, and lack of personal/sensory detail.</p>
+            </div>
+          </div>
+
+          <div className="bg-slate-800 p-4 rounded-xl border border-green-500/30">
+            <Badge color="green">Human Written — Common Patterns</Badge>
+            <div className="mt-3 space-y-3 text-sm text-slate-300">
+              <p><strong>Casual memory:</strong> "I remember that weird summer — the air smelled like tar and oranges, and Mom kept the radio on all day." <span className="text-xs text-slate-500">→ sensory detail, specific memory</span></p>
+              <p><strong>Opinionated snip:</strong> "Nah, that movie was kinda trash. The soundtrack slaps though." <span className="text-xs text-slate-500">→ slang, contractions</span></p>
+              <p><strong>Broken recall:</strong> "I cant remember the name — might be spelled wrong, but I think it was 'Katherine'?" <span className="text-xs text-slate-500">→ typos, uncertainty</span></p>
+              <p className="text-xs text-slate-400"><strong>Clues (Human):</strong> contractions, colloquial phrasing, typos, specific sensory anchors, and variable rhythm.</p>
+            </div>
+          </div>
+
+          <div className="md:col-span-2 bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-3">
+            <div className="font-bold text-slate-100">Practice & Tips — How to get better fast</div>
+            <div className="text-xs text-slate-400 space-y-2">
+              <div><strong>Tip 1:</strong> Read paragraphs aloud — AI text often "flows" too smoothly; humans hesitate and slip in style.</div>
+              <div><strong>Tip 2:</strong> Search for sensory detail (sight, smell, time); absence is suspicious.</div>
+              <div><strong>Tip 3:</strong> Watch for hedging connectors ("in conclusion", "it is important to note").</div>
+              <div><strong>Tip 4:</strong> Typos & slang increase human-likelihood; perfect grammar in casual contexts is suspicious.</div>
+              <div><strong>Exercise:</strong> Use Practice Mode, mark tokens & sentences you suspect, run Scan, then press Reveal Comparison — review misses and learn patterns.</div>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Reveal Comparison Modal (replaces alert) */}
+      <Modal isOpen={showRevealModal} onClose={() => { setShowRevealModal(false); setRevealData(null); }} title="Practice Results — Reveal Comparison">
+        {revealData ? (
+          <div className="space-y-4 text-sm text-slate-300">
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="text-xs text-slate-400">Words marked</div>
+                <div className="font-bold">{revealData.totalWordMarked} marked • {revealData.totalWordCorrect} correct</div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-400">Sentences marked</div>
+                <div className="font-bold">{revealData.totalSentMarked} marked • {revealData.totalSentCorrect} correct</div>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs text-slate-400 mb-1">Word details</div>
+              <div className="max-h-36 overflow-y-auto space-y-1">
+                {revealData.wordMatches.length === 0 ? <div className="text-xs text-slate-500">You didn't mark any words.</div> :
+                  revealData.wordMatches.map((w,i) => (
+                    <div key={i} className={`p-2 rounded ${w.matched ? 'bg-green-900/10 border border-green-700' : 'bg-red-900/5 border border-red-700'}`}>
+                      <div className="flex justify-between items-center">
+                        <div><strong>{w.token || '(whitespace)'} </strong> <span className="text-xs text-slate-400">— token idx {w.idx}</span></div>
+                        <div className="text-xs">{w.matched ? 'Matched AI token ✓' : 'No match ✗'}</div>
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs text-slate-400 mb-1">Sentence details</div>
+              <div className="max-h-40 overflow-y-auto space-y-1">
+                {revealData.sentenceMatches.length === 0 ? <div className="text-xs text-slate-500">You didn't mark any sentences.</div> :
+                  revealData.sentenceMatches.map((s,i) => (
+                    <div key={i} className={`p-2 rounded ${s.matched ? 'bg-green-900/10 border border-green-700' : 'bg-red-900/5 border border-red-700'}`}>
+                      <div className="flex justify-between items-center">
+                        <div className="text-xs">Sentence idx {s.idx}</div>
+                        <div className="text-xs">{s.matched ? 'Matched system flag ✓' : 'Not flagged by system ✗'}</div>
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+
+            <div className="text-xs text-slate-400">
+              <strong>System summary:</strong> {revealData.system.score}% AI likelihood • Buzzwords: {revealData.system.aiWords.join(', ') || '—'} • Repeated: {revealData.system.repeatedWords.join(', ') || '—'}
+            </div>
+
+            <div className="text-xs text-slate-400 space-y-1">
+              <div><strong>Actionable tip:</strong> If you missed AI tokens, focus on rare/academic words and connectors. If you missed flagged sentences, look for perfect structure and hedging wrap-ups.</div>
+              <div><strong>Next step:</strong> Try another example from the top-left presets or paste a clip from an email/article and repeat.</div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button onClick={() => { setShowRevealModal(false); setRevealData(null); }}>Close</Button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-slate-400">No results to show.</div>
+        )}
+      </Modal>
+    </div>
+  );
+};
+
 const LandingPage = ({ onStart }) => {
             // Generate Stars
             const stars = useMemo(() => {
@@ -1891,40 +2919,129 @@ const LandingPage = ({ onStart }) => {
                             </div>
                         )}
 
-                        {view === 'scams' && (
-                            <div className="space-y-8 animate-fade-in">
-                                <h2 className="text-3xl font-black text-white">Threat Defense Center</h2>
-                                <div className="grid lg:grid-cols-2 gap-6">
-                                    {/* THREAT CARDS */}
-                                    <Card title="The 3-Second Clone" icon={Icons.Alert} className="border-l-4 border-l-red-500">
-                                        <div className="space-y-4">
-                                            <p className="text-sm text-slate-300 leading-relaxed">
-                                                Attackers can clone your voice from a short TikTok video or voicemail greeting. They use this to call your grandparents asking for money.
-                                            </p>
-                                            <div className="bg-red-900/20 p-4 rounded-xl border border-red-800">
-                                                <h4 className="font-bold text-red-200 mb-2">Defense Strategy: The Safe Word</h4>
-                                                <p className="text-xs text-red-300">
-                                                    Agree on a random word (e.g., "Octopus") with your family. If "you" call in distress, they must ask for the word. AI cannot guess this.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                    <Card title="Deepfake Video Calls" icon={Icons.User}>
-                                        <div className="space-y-4">
-                                            <p className="text-sm text-slate-300 leading-relaxed">
-                                                Scammers now use real-time face swapping on Zoom/Skype to impersonate bosses or relatives.
-                                            </p>
-                                            <div className="bg-blue-900/20 p-4 rounded-xl border border-blue-800">
-                                                <h4 className="font-bold text-blue-200 mb-2">Defense Strategy: The Side Turn</h4>
-                                                <p className="text-xs text-blue-300">
-                                                    Ask the caller to turn their head 90 degrees to the side. Live deepfake models often glitch and detach the face mask at extreme angles.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </Card>
-                                </div>
-                            </div>
-                        )}
+                       {view === 'scams' && (
+    <div className="space-y-8 animate-fade-in pb-20">
+        <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-slate-700 pb-6">
+            <div>
+                <h2 className="text-4xl font-black text-white">Threat Defense Matrix</h2>
+                <p className="text-slate-400 mt-2">Active database of <span className="text-indigo-400 font-bold">50+ known social engineering vectors</span> and defense protocols.</p>
+            </div>
+            {/* SEARCH & FILTER UI */}
+            <div className="flex gap-2 w-full md:w-auto">
+                 <div className="relative flex-1 md:w-64">
+                    <Icon path={Icons.Search} size={16} className="absolute left-3 top-3.5 text-slate-500" />
+                    <input 
+                        type="text" 
+                        placeholder="Search threats..." 
+                        className="w-full bg-slate-800 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                        onChange={(e) => {
+                            const val = e.target.value.toLowerCase();
+                            const cards = document.querySelectorAll('.scam-card');
+                            cards.forEach(card => {
+                                const text = card.textContent.toLowerCase();
+                                card.style.display = text.includes(val) ? 'flex' : 'none';
+                            });
+                        }}
+                    />
+                 </div>
+            </div>
+        </div>
+        
+        {/* MASSIVE SCAM DATABASE MAPPED INLINE */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-fr">
+            {[
+                // --- CATEGORY: URGENT / AUTHORITY ---
+                { title: "The 3-Second Clone", icon: Icons.Mic, color: "red", tag: "AI Voice", hook: "Relative in jail/hospital calling you.", tech: "Voice cloning from 3s social media clips.", defense: "Ask for a pre-agreed 'Safe Word'." },
+                { title: "Grandparent Scam", icon: Icons.User, color: "red", tag: "Social", hook: "'Grandma, I'm in trouble, don't tell mom.'", tech: "Emotional manipulation + poor audio quality excuses.", defense: "Call the parents/guardians to verify." },
+                { title: "The Jury Duty Warrant", icon: Icons.Shield, color: "orange", tag: "Authority", hook: "Police call: 'You missed jury duty. Pay fine or arrest.'", tech: "Spoofed Caller ID matching local police.", defense: "Real police NEVER call for fines. Hang up." },
+                { title: "IRS Tax Debt", icon: Icons.FileText, color: "orange", tag: "Authority", hook: "Robocall: 'Your SSN is suspended due to tax fraud.'", tech: "Fear induction.", defense: "The IRS sends letters, never calls. Check irs.gov." },
+                { title: "Utilities Shutoff", icon: Icons.Zap, color: "yellow", tag: "Urgency", hook: "Power/Water company: 'Pay in 30 mins or we cut power.'", tech: "Timing (usually Friday afternoons).", defense: "Hang up. Call the number on your actual utility bill." },
+                { title: "ICE / Immigration Threat", icon: Icons.Globe, color: "red", tag: "Authority", hook: "Threat of deportation unless 'bond' is paid.", tech: "Targeting immigrant communities.", defense: "Immigration does not take payment over phone." },
+                { title: "Kidnapping Hoax", icon: Icons.Alert, color: "red", tag: "Extreme", hook: "Screaming voice in background: 'We have your daughter.'", tech: "Stock screaming audio or AI voice.", defense: "Call/Text the 'kidnapped' person immediately." },
+
+                // --- CATEGORY: TECH / MALWARE ---
+                { title: "The Browser Locker", icon: Icons.Lock, color: "blue", tag: "Tech Support", hook: "Loud siren + 'VIRUS DETECTED' fullscreen popup.", tech: "HTML Fullscreen API (Not a real virus).", defense: "Hold Power Button 5s or press Esc. Do not call." },
+                { title: "Fake CAPTCHA Malware", icon: Icons.Terminal, color: "purple", tag: "Malware", hook: "'Verify you are human: Press Win+R, paste this code.'", tech: "PowerShell script injection.", defense: "NEVER paste code into the 'Run' box." },
+                { title: "Quishing (QR Phishing)", icon: Icons.Target, color: "indigo", tag: "Phishing", hook: "Parking meter sticker or '2FA Reset' email QR.", tech: "QR codes bypass email text filters.", defense: "Inspect URL preview before opening." },
+                { title: "Geek Squad Invoice", icon: Icons.FileText, color: "slate", tag: "Phishing", hook: "Email: 'You were charged $499 for renewal.'", tech: "Induces panic to make you call their 'refund' center.", defense: "Check your actual bank statement first." },
+                { title: "AnyDesk / TeamViewer", icon: Icons.Monitor, color: "red", tag: "Remote Access", hook: "'Let me connect to your PC to fix the hack.'", tech: "Remote Access Trojans (RAT).", defense: "NEVER grant remote access to a cold caller." },
+                { title: "Google Voice Code", icon: Icons.Mic, color: "blue", tag: "2FA", hook: "'I sent a code to prove you are real. Read it to me.'", tech: "They are setting up a Google Voice # using YOUR phone.", defense: "Never share a 6-digit code sent to you." },
+                { title: "The 'Clickfix' Infection", icon: Icons.Monitor, color: "purple", tag: "Malware", hook: "Fake 'Word Update' or 'Chrome Update' popup on websites.", tech: "Drive-by download.", defense: "Only update apps via their official settings menu." },
+                { title: "Fake Zoom Installer", icon: Icons.Video, color: "blue", tag: "Malware", hook: "Google Ad for 'Zoom Download' leads to fake site.", tech: "SEO Poisoning.", defense: "Check URL carefully. Use zoom.us only." },
+
+                // --- CATEGORY: FINANCIAL / CRYPTO ---
+                { title: "Pig Butchering", icon: Icons.Heart, color: "pink", tag: "Crypto", hook: "Romance + 'I can teach you to trade crypto'.", tech: "Fake trading apps showing massive profits.", defense: "No video call = Scam. Never trust 'guaranteed' returns." },
+                { title: "Rug Pull", icon: Icons.TrendingUp, color: "pink", tag: "Crypto", hook: "New coin/NFT project with massive hype.", tech: "Devs drain liquidity pool.", defense: "Check contract audits and team dox status." },
+                { title: "Metamask 'Verify'", icon: Icons.Lock, color: "orange", tag: "Crypto", hook: "Email/DM: 'Verify your wallet to avoid suspension.'", tech: "Drainer script steals seed phrase.", defense: "Wallets NEVER need verification. Never share seed phrase." },
+                { title: "Fake Airdrop", icon: Icons.Gift, color: "green", tag: "Crypto", hook: "Free tokens appearing in your wallet.", tech: "Interacting with the token triggers a drainer.", defense: "Ignore/Hide unknown tokens. Do not swap them." },
+                { title: "Zelle 'Business' Upgrade", icon: Icons.Briefcase, color: "purple", tag: "Banking", hook: "FB Marketplace buyer: 'I need to pay you extra to upgrade account.'", tech: "Fake email confirmation.", defense: "Zelle has no 'Business Upgrade' fee." },
+                { title: "Check Overpayment", icon: Icons.FileText, color: "green", tag: "Banking", hook: "They send a check for $2000, ask you to wire back $500.", tech: "The check will bounce weeks later.", defense: "Wait 30 days for check to fully clear." },
+                { title: "PayPal 'Friends & Family'", icon: Icons.CreditCard, color: "blue", tag: "Banking", hook: "Seller asks for F&F payment to 'save fees'.", tech: "Removes Buyer Protection.", defense: "Always use 'Goods & Services' for strangers." },
+                
+                // --- CATEGORY: EMPLOYMENT / TASKS ---
+                { title: "Task Fraud", icon: Icons.Briefcase, color: "emerald", tag: "Job Scam", hook: "'Earn $200/hr clicking buttons/optimizing apps.'", tech: "Fake dashboard. Requires 'deposit' to withdraw pay.", defense: "Real jobs do not ask you to pay to work." },
+                { title: "LinkedIn Voice Harvest", icon: Icons.Mic, color: "blue", tag: "Corporate", hook: "Fake recruiter calls, asks basic Qs, hangs up.", tech: "Recording voice for AI banking bypass.", defense: "Verify recruiter profile first." },
+                { title: "The Car Wrap", icon: Icons.Truck, color: "yellow", tag: "Job Scam", hook: "'Get paid $500/week to wrap your car with Red Bull ads.'", tech: "Fake check for 'wrap specialist' (who is the scammer).", defense: "Red Bull does not hire random cars." },
+                { title: "Modeling Scout", icon: Icons.Camera, color: "pink", tag: "Exploitation", hook: "DM: 'You have the look. Pay for a portfolio shoot.'", tech: "Advance fee fraud.", defense: "Legit agencies take commission, not upfront fees." },
+                { title: "Nanny / Caregiver", icon: Icons.User, color: "purple", tag: "Job Scam", hook: "Hired instantly without interview. Sends check for 'supplies'.", tech: "Check fraud.", defense: "Always meet in person or video call first." },
+                { title: "Mystery Shopper", icon: Icons.ShoppingBag, color: "emerald", tag: "Job Scam", hook: "'Buy gift cards to test the store service.'", tech: "They ask for the card codes.", defense: "Mystery shoppers are never paid in advance by check." },
+
+                // --- CATEGORY: SHOPPING / SOCIAL ---
+                { title: "The Phantom Rental", icon: Icons.Home, color: "cyan", tag: "Housing", hook: "Cheap rent, landlord is 'missionary' abroad.", tech: "Stolen photos.", defense: "Reverse image search. Never pay before viewing." },
+                { title: "The 'Hi Mum' Text", icon: Icons.MessageCircle, color: "green", tag: "Social", hook: "'Lost phone, this is my new number.'", tech: "Mass SMS phishing.", defense: "Call the OLD number to verify." },
+                { title: "Facebook 'Courier'", icon: Icons.Box, color: "blue", tag: "Marketplace", hook: "'I am busy, sending a GLS/UPS courier with cash.'", tech: "Phishing link for 'insurance fee'.", defense: "Cash in person only. No couriers." },
+                { title: "Pet Deposit Scam", icon: Icons.Heart, color: "orange", tag: "Shopping", hook: "Purebred puppy for free/cheap, just pay shipping.", tech: "Endless 'crate fees' and 'vaccine fees'.", defense: "Video call to see the puppy live." },
+                { title: "Tinder Verification", icon: Icons.Heart, color: "pink", tag: "Dating", hook: "Match asks you to click a link to 'verify safety'.", tech: "Credit card phishing site.", defense: "Tinder verifies via selfie, not credit card." },
+                { title: "Sextortion", icon: Icons.Video, color: "red", tag: "Blackmail", hook: "Video chat turns sexual, then they threaten to send recording to friends.", tech: "Screen recording.", defense: "Block immediately. Do NOT pay (they leak anyway)." },
+                { title: "Wrong Number (Mandy)", icon: Icons.MessageCircle, color: "pink", tag: "Social", hook: "'Is this Annie? We met at the gym.' -> Friendship.", tech: "Pig Butchering lead-in.", defense: "Ignore random texts. Don't engage." },
+                { title: "Amazon 'Brushing'", icon: Icons.Package, color: "orange", tag: "Shopping", hook: "Random cheap packages arrive at your house.", tech: "Seller boosting their own rating using your address.", defense: "Change passwords. Keep the free stuff." },
+                { title: "Student Loan Forgiveness", icon: Icons.Book, color: "blue", tag: "Gov", hook: "Call: 'Qualify for Biden forgiveness today.'", tech: "Stealing FSA ID login.", defense: "Apply only at studentaid.gov." },
+                { title: "Sugar Baby Scam", icon: Icons.DollarSign, color: "pink", tag: "Social", hook: "'I want to spoil you. What is your bank login to deposit checks?'", tech: "Money laundering / Account takeover.", defense: "Never share login credentials." },
+                { title: "Fake Charity", icon: Icons.Heart, color: "red", tag: "Disaster", hook: "Donations for recent earthquake/war.", tech: "Lookalike websites.", defense: "Use CharityNavigator to verify orgs." },
+                { title: "Counterfeit Merch", icon: Icons.ShoppingCart, color: "slate", tag: "Shopping", hook: "Ads for 90% off luxury goods.", tech: "Bait and switch (receive cheap knockoff).", defense: "If it's too good to be true, it is." },
+                { title: "Discord Nitro Scam", icon: Icons.MessageSquare, color: "indigo", tag: "Gaming", hook: "DM: 'Free Nitro for 3 months, scan QR.'", tech: "QR Token Logging.", defense: "Never scan Discord QRs sent by strangers." },
+                { title: "Steam Admin Scam", icon: Icons.MessageSquare, color: "blue", tag: "Gaming", hook: "'I accidentally reported your account. Talk to this admin.'", tech: "Fake admin steals account.", defense: "Steam admins never contact via chat." },
+                { title: "Fake Influencer", icon: Icons.Instagram, color: "pink", tag: "Social", hook: "'You won the giveaway! Pay shipping.'", tech: "Impersonator accounts.", defense: "Check the handle spelling carefully." },
+                { title: "Booking.com Diversion", icon: Icons.Map, color: "blue", tag: "Travel", hook: "Message inside app: 'Payment failed, use this link.'", tech: "Hacked hotel accounts.", defense: "Only pay through the platform's main button." },
+                
+            ].map((scam, i) => (
+                <div key={i} className="scam-card group relative bg-slate-800 border border-slate-700 hover:border-indigo-500 rounded-2xl p-6 transition-all hover:shadow-2xl hover:-translate-y-1 flex flex-col">
+                    {/* Color Accent Bar */}
+                    <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-2xl bg-${scam.color}-500`}></div>
+                    
+                    <div className="flex justify-between items-start mb-4 mt-2">
+                        <div className={`p-3 rounded-xl bg-${scam.color}-500/10 text-${scam.color}-400`}>
+                            <Icon path={scam.icon} size={24} />
+                        </div>
+                        <Badge color={scam.color}>{scam.tag}</Badge>
+                    </div>
+
+                    <h3 className="font-bold text-xl text-white mb-2 group-hover:text-indigo-400 transition-colors">{scam.title}</h3>
+                    
+                    <div className="space-y-4 flex-1">
+                        <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">The Hook</p>
+                            <p className="text-sm text-slate-300 leading-relaxed">"{scam.hook}"</p>
+                        </div>
+                        
+                        <div>
+                            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">The Technology</p>
+                            <p className="text-sm text-slate-400">{scam.tech}</p>
+                        </div>
+                    </div>
+
+                    <div className={`mt-6 pt-4 border-t border-${scam.color}-500/30`}>
+                        <div className="flex items-center gap-2">
+                            <Icon path={Icons.Shield} size={16} className={`text-${scam.color}-400`} />
+                            <span className={`text-xs font-bold uppercase tracking-wide text-${scam.color}-400`}>Defense Protocol</span>
+                        </div>
+                        <p className="text-sm text-white mt-1 font-medium">{scam.defense}</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+)}
                     </main>
 
                     {/* Course Modal with Quiz */}
