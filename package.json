@@ -1,0 +1,21 @@
+{
+  "name": "ai-sentinal",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/namdok2k3-cmyk/Ai-Sentinel.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/namdok2k3-cmyk/Ai-Sentinel/issues"
+  },
+  "homepage": "https://github.com/namdok2k3-cmyk/Ai-Sentinel#readme"
+}
