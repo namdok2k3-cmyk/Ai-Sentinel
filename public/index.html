@@ -182,11 +182,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo, useCallback } = React;
-// Persists state to localStorage across reloads.
-        // NOTE: works in a real browser tab. If you preview this file inside
-        // Claude.ai's artifact pane, localStorage is sandboxed/blocked there —
-        // open the saved .html file directly, or deploy it, to see it persist.
+const { useState, useEffect, useRef, useMemo, useCallback, useContext, useReducer, createContext } = React;        // NOTE: works in a real browser tab. If you preview this file inside
         function useLocalStorage(key, initialValue) {
             const [storedValue, setStoredValue] = useState(() => {
                 try {
@@ -206,6 +202,72 @@
             }, [key, storedValue]);
             return [storedValue, setStoredValue];
         }
+        // ==========================================
+        // GLOBAL STATE (React Context API)
+        // ==========================================
+        const UserContext = createContext(null);
+
+        const initialUserState = {
+            userXP: 350, userLevel: 3, completedCourses: [], quizAnswers: {},
+            stats: { textScans: 0, voiceScans: 0 }
+        };
+
+        function userReducer(state, action) {
+            switch (action.type) {
+                case 'AWARD_XP': {
+                    const newXP = state.userXP + action.payload;
+                    return { ...state, userXP: newXP, userLevel: Math.floor(newXP / 200) + 1 };
+                }
+                case 'COMPLETE_COURSE':
+                    return state.completedCourses.includes(action.payload) ? state : { ...state, completedCourses: [...state.completedCourses, action.payload] };
+                case 'SAVE_QUIZ_ANSWER': {
+                    const { courseId, questionIdx, answerIdx } = action.payload;
+                    return { ...state, quizAnswers: { ...state.quizAnswers, [courseId]: { ...(state.quizAnswers[courseId] || {}), [questionIdx]: answerIdx } } };
+                }
+                case 'RESET_QUIZ': {
+                    const updated = { ...state.quizAnswers };
+                    delete updated[action.payload];
+                    return { ...state, quizAnswers: updated };
+                }
+                case 'INCREMENT_SCAN': {
+                    const key = `${action.payload}Scans`;
+                    return { ...state, stats: { ...state.stats, [key]: (state.stats[key] || 0) + 1 } };
+                }
+                case 'HYDRATE': return { ...state, ...action.payload };
+                default: return state;
+            }
+        }
+
+        const UserProvider = ({ children }) => {
+            const [state, dispatch] = useReducer(userReducer, initialUserState);
+
+            useEffect(() => {
+                try {
+                    const saved = window.localStorage.getItem('aisentinel_global_state');
+                    if (saved) dispatch({ type: 'HYDRATE', payload: JSON.parse(saved) });
+                } catch (e) {}
+            }, []);
+
+            useEffect(() => {
+                try { window.localStorage.setItem('aisentinel_global_state', JSON.stringify(state)); } catch (e) {}
+            }, [state]);
+
+            const actions = useMemo(() => ({
+                awardXP: (amount) => dispatch({ type: 'AWARD_XP', payload: amount }),
+                completeCourse: (courseId) => dispatch({ type: 'COMPLETE_COURSE', payload: courseId }),
+                saveQuizAnswer: (courseId, qIdx, aIdx) => dispatch({ type: 'SAVE_QUIZ_ANSWER', payload: { courseId, questionIdx: qIdx, answerIdx: aIdx } }),
+                resetQuiz: (courseId) => dispatch({ type: 'RESET_QUIZ', payload: courseId }),
+                incrementScan: (type) => dispatch({ type: 'INCREMENT_SCAN', payload: type }),
+            }), []);
+
+            return <UserContext.Provider value={{ state, actions }}>{children}</UserContext.Provider>;
+        };
+
+        const useUser = () => {
+            const ctx = useContext(UserContext);
+            if (!ctx) throw new Error('useUser must be used inside <UserProvider>');
+            return ctx;
+        };
         // ==========================================
         // 1. DATASETS
         // ==========================================
@@ -751,7 +813,8 @@
             Map: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></>,
             Briefcase: <><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>,
             Instagram: <><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></>,
-            Download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>
+           Download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>,
+            PieChart: <><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></>
         };
 
         // ==========================================
@@ -802,7 +865,25 @@
             };
             return <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${colors[color] || colors.blue}`}>{children}</span>;
         };
+const ChartCanvas = ({ type, data, options, height = 250 }) => {
+            const canvasRef = useRef(null);
+            const chartRef = useRef(null);
 
+            useEffect(() => {
+                if (!canvasRef.current || typeof Chart === 'undefined') return;
+                if (chartRef.current) chartRef.current.destroy();
+
+                chartRef.current = new Chart(canvasRef.current.getContext('2d'), {
+                    type,
+                    data,
+                    options: { responsive: true, maintainAspectRatio: false, ...options }
+                });
+
+                return () => { if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; } };
+            }, [type, JSON.stringify(data), JSON.stringify(options)]);
+
+            return <div style={{ height: `${height}px`, position: 'relative' }}><canvas ref={canvasRef}></canvas></div>;
+        };
         const ProgressBar = ({ value, max = 100, color = "bg-indigo-600" }) => (
             <div className="w-full bg-slate-700 rounded-full h-2.5 overflow-hidden">
                 <div className={`h-2.5 rounded-full transition-all duration-1000 ${color}`} style={{ width: `${(value / max) * 100}%` }}></div>
@@ -1482,7 +1563,139 @@ const PromptOptimizer = () => {
         </div>
     );
 };
+const CISOView = () => {
+            const darkOptions = {
+                plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } },
+                scales: {
+                    x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+                }
+            };
+            const doughnutOptions = {
+                plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 16, font: { size: 11 } } } },
+                cutout: '70%'
+            };
 
+            const moduleCompletionData = {
+                labels: ['Visual Forensics', 'Audio Defense', 'Text Analysis', 'Scam Defense'],
+                datasets: [{ data: [78, 85, 68, 91], backgroundColor: ['#4f46e5', '#0ea5e9', '#8b5cf6', '#22c55e'], borderWidth: 0 }]
+            };
+
+            const threatTrendData = {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [
+                    { label: 'Threats Detected', data: [12, 19, 23, 17, 31, 28], borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.4, fill: true },
+                    { label: 'Threats Neutralized', data: [10, 17, 22, 16, 28, 26], borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', tension: 0.4, fill: true }
+                ]
+            };
+
+            const departmentRiskData = {
+                labels: ['Finance', 'HR', 'Legal', 'Engineering', 'Marketing', 'Ops'],
+                datasets: [{ label: 'Risk Score', data: [82, 65, 71, 45, 78, 59], backgroundColor: ['#ef4444','#eab308','#eab308','#22c55e','#ef4444','#22c55e'], borderRadius: 6 }]
+            };
+
+            const KPIs = [
+                { label: 'Overall Security Score', value: '78%', delta: '+12% QoQ', color: 'green' },
+                { label: 'Threat Detection Efficiency', value: '+40%', delta: 'vs. Q1 baseline', color: 'green' },
+                { label: 'Employees Trained', value: '342/400', delta: '85.5% coverage', color: 'blue' },
+                { label: 'Phishing Click Rate', value: '4.2%', delta: '-8.1% QoQ', color: 'green' },
+                { label: 'Avg Incident Response', value: '2.4h', delta: '-40% faster', color: 'green' },
+                { label: 'High-Risk Employees', value: '23', delta: '+3 flagged', color: 'red' },
+            ];
+
+            const incidents = [
+                { time: '2h ago', type: 'CEO Fraud Attempt', dept: 'Finance', status: 'Neutralized', severity: 'HIGH' },
+                { time: '6h ago', type: 'Spear Phishing', dept: 'HR', status: 'Under Review', severity: 'MEDIUM' },
+                { time: '1d ago', type: 'Voice Clone Call', dept: 'Legal', status: 'Resolved', severity: 'HIGH' },
+                { time: '2d ago', type: 'QR Code Phishing', dept: 'Marketing', status: 'Resolved', severity: 'LOW' },
+                { time: '3d ago', type: 'Deepfake Video', dept: 'Finance', status: 'Resolved', severity: 'CRITICAL' },
+            ];
+
+            const leaderboard = [
+                { dept: 'Legal', score: 94, employees: 12, modules: 17 },
+                { dept: 'Finance', score: 89, employees: 28, modules: 15 },
+                { dept: 'Engineering', score: 82, employees: 45, modules: 14 },
+                { dept: 'HR', score: 76, employees: 19, modules: 13 },
+                { dept: 'Marketing', score: 68, employees: 22, modules: 12 },
+            ];
+
+            return (
+                <div className="space-y-8 animate-fade-in">
+                    <div className="flex justify-between items-start gap-4">
+                        <div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <h2 className="text-3xl font-black text-white">CISO Executive Dashboard</h2>
+                                <Badge color="red">CONFIDENTIAL</Badge>
+                            </div>
+                            <p className="text-slate-400">Organization-wide AI threat posture and training compliance.</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        {KPIs.map((k, i) => (
+                            <div key={i} className="glass rounded-2xl p-4 text-center">
+                                <div className={`text-2xl font-black mb-1 ${k.color === 'green' ? 'text-green-400' : k.color === 'red' ? 'text-red-400' : 'text-indigo-400'}`}>{k.value}</div>
+                                <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-2 leading-tight">{k.label}</div>
+                                <div className={`text-xs font-bold ${k.color === 'red' ? 'text-red-400' : 'text-green-400'}`}>{k.delta}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="grid lg:grid-cols-3 gap-6">
+                        <Card title="Module Completion by Category" icon={Icons.PieChart}>
+                            <ChartCanvas type="doughnut" data={moduleCompletionData} options={doughnutOptions} height={220} />
+                            <p className="text-xs text-slate-400 text-center mt-3">85% of employees passed the <span className="text-white font-bold">Deepfake Audio Defense</span> module this quarter.</p>
+                        </Card>
+                        <Card title="Threat Detection Trend" icon={Icons.Activity} className="lg:col-span-2">
+                            <ChartCanvas type="line" data={threatTrendData} options={{ ...darkOptions, plugins: { legend: { display: true, labels: { color: '#94a3b8' } } } }} height={220} />
+                        </Card>
+                    </div>
+
+                    <div className="grid lg:grid-cols-2 gap-6">
+                        <Card title="Department Risk Score" icon={Icons.Target}>
+                            <ChartCanvas type="bar" data={departmentRiskData} options={{ ...darkOptions, plugins: { legend: { display: false } } }} height={240} />
+                            <div className="flex gap-4 mt-4 text-xs text-slate-400">
+                                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-500/70 inline-block"></span> High (75+)</span>
+                                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-500/70 inline-block"></span> Medium (60-75)</span>
+                                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-green-500/70 inline-block"></span> Low (&lt;60)</span>
+                            </div>
+                        </Card>
+                        <Card title="Recent Incident Log" icon={Icons.Alert}>
+                            <div className="space-y-3">
+                                {incidents.map((inc, i) => (
+                                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-slate-900 border border-slate-800">
+                                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${inc.severity === 'CRITICAL' ? 'bg-red-500 animate-pulse' : inc.severity === 'HIGH' ? 'bg-orange-500' : inc.severity === 'MEDIUM' ? 'bg-yellow-500' : 'bg-green-500'}`}></div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-sm font-bold text-white truncate">{inc.type}</div>
+                                            <div className="text-xs text-slate-400">{inc.dept} • {inc.time}</div>
+                                        </div>
+                                        <Badge color={inc.status === 'Neutralized' || inc.status === 'Resolved' ? 'green' : inc.status === 'Under Review' ? 'orange' : 'red'}>{inc.status}</Badge>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>
+                    </div>
+
+                    <Card title="Top Performing Departments — Training Compliance" icon={Icons.Award}>
+                        <div className="space-y-4">
+                            {leaderboard.map((d, i) => (
+                                <div key={i} className="flex items-center gap-4">
+                                    <div className="w-6 text-center font-black text-slate-500 text-sm">#{i + 1}</div>
+                                    <div className="w-24 text-sm font-bold text-slate-200">{d.dept}</div>
+                                    <div className="flex-1">
+                                        <div className="flex justify-between text-xs text-slate-400 mb-1"><span>{d.employees} employees</span><span>{d.modules}/18 modules</span></div>
+                                        <div className="w-full bg-slate-700 rounded-full h-2">
+                                            <div className={`h-2 rounded-full transition-all duration-1000 ${d.score >= 90 ? 'bg-green-500' : d.score >= 75 ? 'bg-indigo-500' : 'bg-yellow-500'}`} style={{ width: `${d.score}%` }}></div>
+                                        </div>
+                                    </div>
+                                    <div className={`text-sm font-black w-12 text-right ${d.score >= 90 ? 'text-green-400' : d.score >= 75 ? 'text-indigo-400' : 'text-yellow-400'}`}>{d.score}%</div>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+                </div>
+            );
+        };
        const ActiveThreats = ({ defenseMode = false }) => {
             const [index, setIndex] = useState(0);
 
@@ -3057,7 +3270,20 @@ const LandingPage = ({ onStart }) => {
                                     From protecting our grandparents from phantom calls to guiding the youth through a maze of algorithms, our mission is simple: <span className="text-white font-bold drop-shadow-md">To ensure that in a world of artificial intelligence, human connection remains authentic.</span>
                                 </p>
                             </div>
-
+  {/* Action Area */}
+                            <div className="pt-6 pb-12">
+                                <button 
+                                    onClick={onStart}
+                                    className="group relative px-12 py-5 bg-white/5 hover:bg-indigo-600/20 backdrop-blur-md border border-white/10 hover:border-indigo-400/50 rounded-full font-bold text-lg text-white transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(99,102,241,0.4)] flex items-center gap-3 overflow-hidden"
+                                >
+                                    <span className="relative z-10 tracking-widest">INITIALIZE SYSTEM</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform relative z-10 text-indigo-400">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
+                                    </svg>
+                                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12"></div>
+                                </button>
+                            </div>
                             {/* Feature Overview Board */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-5xl">
                                 {[
@@ -3107,20 +3333,7 @@ const LandingPage = ({ onStart }) => {
                                     ))}
                                 </div>
                             </div>
-                            {/* Action Area */}
-                            <div className="pt-6 pb-12">
-                                <button 
-                                    onClick={onStart}
-                                    className="group relative px-12 py-5 bg-white/5 hover:bg-indigo-600/20 backdrop-blur-md border border-white/10 hover:border-indigo-400/50 rounded-full font-bold text-lg text-white transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(99,102,241,0.4)] flex items-center gap-3 overflow-hidden"
-                                >
-                                    <span className="relative z-10 tracking-widest">INITIALIZE SYSTEM</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform relative z-10 text-indigo-400">
-                                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                                        <polyline points="12 5 19 12 12 19"></polyline>
-                                    </svg>
-                                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12"></div>
-                                </button>
-                            </div>
+                          
 
                             {/* Credits */}
                             <div className="mt-auto pt-8 flex flex-col items-center">
@@ -3136,8 +3349,12 @@ const LandingPage = ({ onStart }) => {
             );
         };
         // --- DASHBOARD (Expanded with Live Threats) ---
-const Dashboard = ({ userXP, userLevel, setView, defenseMode, stats, completedCoursesCount }) => {            return (
-                <div className="space-y-8 animate-fade-in">
+const Dashboard = ({ setView, defenseMode }) => {
+    const { state: userState } = useUser();
+    const { userXP, userLevel, stats, completedCourses } = userState;
+    const completedCoursesCount = completedCourses.length;
+    return (
+                        <div className="space-y-8 animate-fade-in">
                     <div className="relative overflow-hidden rounded-3xl bg-indigo-600 text-white p-8 md:p-12 shadow-xl shadow-none">
                         <div className="relative z-10 max-w-2xl">
                             <Badge color="purple">Enterprise Edition v5.3</Badge>
@@ -3242,14 +3459,10 @@ const Dashboard = ({ userXP, userLevel, setView, defenseMode, stats, completedCo
         const App = () => {
             const [hasStarted, setHasStarted] = useState(false); // NEW: Track start state
             
-            const [view, setView] = useState('home');
-            const [userXP, setUserXP] = useLocalStorage('aisentinel_userXP', 350);
-            const [userLevel, setUserLevel] = useLocalStorage('aisentinel_userLevel', 3);
+const [view, setView] = useState('home');
+            const { state: userState, actions: userActions } = useUser();
+            const { completedCourses, quizAnswers, userXP, userLevel, stats } = userState;
             const [activeCourse, setActiveCourse] = useState(null);
-            const [quizAnswers, setQuizAnswers] = useLocalStorage('aisentinel_quizAnswers', {});
-            const [showQuizResult, setShowQuizResult] = useState(null);
-            const [stats, setStats] = useLocalStorage('aisentinel_stats', { textScans: 0, voiceScans: 0 });
-            const [completedCourses, setCompletedCourses] = useLocalStorage('aisentinel_completedCourses', []);
             const [defenseMode, setDefenseMode] = useState(false);
             const [adminMode, setAdminMode] = useState(false);
 
@@ -3276,7 +3489,8 @@ const Dashboard = ({ userXP, userLevel, setView, defenseMode, stats, completedCo
                         <div className="space-y-2 flex-1 overflow-y-auto pr-2 custom-scrollbar">
                             <div className="text-xs font-bold text-slate-400 uppercase tracking-widest px-4 mb-2 mt-4">Modules</div>
                             {[
-                                { id: 'home', label: 'Dashboard', icon: Icons.Home },
+  { id: 'home', label: 'Dashboard', icon: Icons.Home },
+                                { id: 'ciso', label: 'CISO Dashboard', icon: Icons.PieChart },
                                 { id: 'visuals', label: 'Visual Forensics', icon: Icons.Eye },
                                 { id: 'text', label: 'Text Analysis', icon: Icons.Search },
                                 { id: 'voice', label: 'Voice Forensics', icon: Icons.Mic },
@@ -3308,11 +3522,11 @@ const Dashboard = ({ userXP, userLevel, setView, defenseMode, stats, completedCo
                         <div className="md:hidden glass p-4 rounded-xl mb-4 flex justify-between items-center sticky top-4 z-50">
                             <span className="font-black text-lg text-white">AI<span className="text-indigo-600">Sentinel</span></span>
                         </div>
-
-        {view === 'home' && <Dashboard userXP={userXP} userLevel={userLevel} setView={setView} defenseMode={defenseMode} stats={stats} completedCoursesCount={completedCourses.length} />}
+{view === 'home' && <Dashboard setView={setView} defenseMode={defenseMode} />}
+                        {view === 'ciso' && <CISOView />}
                         {view === 'visuals' && <VisualForensics />}
-                        {view === 'text' && <TextForensics adminMode={adminMode} onScan={() => setStats(prev => ({ ...prev, textScans: (prev.textScans || 0) + 1 }))} />}
-                        {view === 'voice' && <VoiceForensics adminMode={adminMode} onScan={() => setStats(prev => ({ ...prev, voiceScans: (prev.voiceScans || 0) + 1 }))} />}
+                        {view === 'text' && <TextForensics adminMode={adminMode} onScan={() => userActions.incrementScan('text')} />}
+                        {view === 'voice' && <VoiceForensics adminMode={adminMode} onScan={() => userActions.incrementScan('voice')} />}
                         {view === 'optimizer' && <PromptOptimizer />}
                         
                         {view === 'learn' && (
@@ -3387,16 +3601,7 @@ const Dashboard = ({ userXP, userLevel, setView, defenseMode, stats, completedCo
                                             <Icon path={Icons.Target} className="text-indigo-500" />
                                             Certification Exam ({activeCourse.quizzes.length} Questions)
                                         </h4>
-                                        <button
-                                            onClick={() => {
-                                                const updated = { ...quizAnswers };
-                                                delete updated[activeCourse.id];
-                                                setQuizAnswers(updated);
-                                            }}
-                                            className="text-xs font-bold text-slate-400 hover:text-red-400 flex items-center gap-1 transition-colors"
-                                        >
-                                            <Icon path={Icons.RefreshCw} size={12} /> Reset Attempts
-                                        </button>
+                                      onClick={() => userActions.saveQuizAnswer(activeCourse.id, qIdx, oIdx)}
                                     </div>
                                     
                                     <div className="space-y-8">
@@ -3471,9 +3676,9 @@ const Dashboard = ({ userXP, userLevel, setView, defenseMode, stats, completedCo
                                         }
 
                                         // Only award XP if they passed (e.g. > 50%)
-                                     if (score > totalCount / 2) {
-                                            setUserXP(p => p + activeCourse.xp); 
-                                            setCompletedCourses(prev => prev.includes(activeCourse.id) ? prev : [...prev, activeCourse.id]);
+                                    if (score > totalCount / 2) {
+                                            userActions.awardXP(activeCourse.xp);
+                                            userActions.completeCourse(activeCourse.id);
                                             alert(`Module Complete! You scored ${score}/${totalCount}. +${activeCourse.xp} XP`);
                                         } else {
                                             alert(`You scored ${score}/${totalCount}. Try again to earn XP.`);
@@ -3489,13 +3694,13 @@ const Dashboard = ({ userXP, userLevel, setView, defenseMode, stats, completedCo
 
                     {/* Mobile Tab Bar */}
                     <div className="md:hidden fixed bottom-0 left-0 right-0 glass border-t border-slate-700 p-2 grid grid-cols-5 z-50 bg-slate-900/90">
-                        {['home', 'visuals', 'text', 'voice', 'learn'].map(id => (
+                    {['home', 'ciso', 'visuals', 'text', 'learn'].map(id => (
                             <button 
                                 key={id} 
                                 onClick={() => setView(id)}
                                 className={`flex flex-col items-center justify-center p-2 rounded-xl transition-colors ${view === id ? 'text-indigo-600' : 'text-slate-400'}`}
                             >
-                                <Icon path={id === 'home' ? Icons.Home : id === 'visuals' ? Icons.Eye : id === 'text' ? Icons.Search : id === 'voice' ? Icons.Mic : Icons.Book} />
+                                <Icon path={id === 'home' ? Icons.Home : id === 'ciso' ? Icons.PieChart : id === 'visuals' ? Icons.Eye : id === 'text' ? Icons.Search : Icons.Book} />
                             </button>
                         ))}
                     </div>
@@ -3503,8 +3708,8 @@ const Dashboard = ({ userXP, userLevel, setView, defenseMode, stats, completedCo
             );
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+       const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<UserProvider><App /></UserProvider>);
         
     </script>
 </body>
