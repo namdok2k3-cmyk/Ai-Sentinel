@@ -183,7 +183,29 @@
 
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo, useCallback } = React;
-
+// Persists state to localStorage across reloads.
+        // NOTE: works in a real browser tab. If you preview this file inside
+        // Claude.ai's artifact pane, localStorage is sandboxed/blocked there —
+        // open the saved .html file directly, or deploy it, to see it persist.
+        function useLocalStorage(key, initialValue) {
+            const [storedValue, setStoredValue] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    console.warn(`useLocalStorage: could not read "${key}"`, error);
+                    return initialValue;
+                }
+            });
+            useEffect(() => {
+                try {
+                    window.localStorage.setItem(key, JSON.stringify(storedValue));
+                } catch (error) {
+                    console.warn(`useLocalStorage: could not persist "${key}"`, error);
+                }
+            }, [key, storedValue]);
+            return [storedValue, setStoredValue];
+        }
         // ==========================================
         // 1. DATASETS
         // ==========================================
@@ -710,7 +732,26 @@
             ArrowRight: <><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></>,
             Globe: <><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></>,
             ExternalLink: <><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></>,
-            Wand: <><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h0"/><path d="M17.8 6.2 19 5"/><path d="M3 21l9-9"/><path d="M12.2 6.2 11 5"/></>
+          Wand: <><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h0"/><path d="M17.8 6.2 19 5"/><path d="M3 21l9-9"/><path d="M12.2 6.2 11 5"/></>,
+            Monitor: <><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></>,
+            Video: <><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2" ry="2"/></>,
+            Heart: <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>,
+            TrendingUp: <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></>,
+            Gift: <><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></>,
+            CreditCard: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></>,
+            Package: <><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></>,
+            ShoppingBag: <><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></>,
+            DollarSign: <><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></>,
+            MessageSquare: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>,
+            MessageCircle: <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>,
+            Camera: <><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></>,
+            Truck: <><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></>,
+            Box: <><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></>,
+            ShoppingCart: <><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></>,
+            Map: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></>,
+            Briefcase: <><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>,
+            Instagram: <><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></>,
+            Download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>
         };
 
         // ==========================================
@@ -745,15 +786,21 @@
             </div>
         );
 
-        const Badge = ({ children, color = 'blue' }) => {
+    const Badge = ({ children, color = 'blue' }) => {
             const colors = {
                 blue: "bg-blue-900/50 text-blue-200",
                 green: "bg-green-900/50 text-green-200",
                 red: "bg-red-900/50 text-red-200",
                 purple: "bg-purple-900/50 text-purple-200",
-                orange: "bg-orange-900/50 text-orange-200"
+                orange: "bg-orange-900/50 text-orange-200",
+                yellow: "bg-yellow-900/50 text-yellow-200",
+                indigo: "bg-indigo-900/50 text-indigo-200",
+                slate: "bg-slate-700/50 text-slate-200",
+                pink: "bg-pink-900/50 text-pink-200",
+                emerald: "bg-emerald-900/50 text-emerald-200",
+                cyan: "bg-cyan-900/50 text-cyan-200"
             };
-            return <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${colors[color]}`}>{children}</span>;
+            return <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${colors[color] || colors.blue}`}>{children}</span>;
         };
 
         const ProgressBar = ({ value, max = 100, color = "bg-indigo-600" }) => (
@@ -781,6 +828,104 @@
             const mins = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
             return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        };
+        const ToggleSwitch = ({ checked, onChange, label, description }) => (
+            <label className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700 cursor-pointer hover:bg-slate-800 transition-colors">
+                <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-slate-200">{label}</div>
+                    {description && <div className="text-[10px] text-slate-500 mt-0.5 leading-snug">{description}</div>}
+                </div>
+                <div className={`relative w-10 h-5 rounded-full transition-colors flex-shrink-0 ${checked ? 'bg-indigo-600' : 'bg-slate-600'}`}>
+                    <input type="checkbox" checked={checked} onChange={onChange} className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" />
+                    <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform pointer-events-none ${checked ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                </div>
+            </label>
+        );
+
+        const downloadJSON = (filename, dataObj) => {
+            try {
+                const dataStr = JSON.stringify(dataObj, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            } catch (err) {
+                console.error('Report export failed:', err);
+                alert('Could not generate the report file.');
+            }
+        };
+
+        const generateReport = (type, payload) => {
+            const methodologyMap = {
+                'text-forensics': "Lexical frequency analysis against curated AI-vocabulary clusters (academic/corporate/hype/filler), sentence-length burstiness, type-token ratio, punctuation complexity, and connector-phrase detection. Heuristic, not a definitive classifier.",
+                'voice-forensics': "Time-domain signal analysis on decoded PCM samples via the Web Audio API: zero-crossing rate, frame-level RMS energy, silence-ratio (breath-gap proxy), and energy variance (pitch-stability proxy). Heuristic, not a definitive classifier."
+            };
+            return {
+                reportType: type,
+                generatedAt: new Date().toISOString(),
+                system: "AI Sentinel Enterprise Edition v5.3",
+                methodology: methodologyMap[type] || "Manual forensic checklist inspection.",
+                ...payload
+            };
+        };
+
+        const downloadBlobUrlAsFile = async (blobUrl, filename) => {
+            try {
+                const response = await fetch(blobUrl);
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const link = document.createElement('a');
+                    link.href = reader.result;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                };
+                reader.onerror = () => alert('Could not read the audio file for download.');
+                reader.readAsDataURL(blob);
+            } catch (err) {
+                console.error('Download failed:', err);
+                alert('Could not prepare the download.');
+            }
+        };
+
+        const computeAudioFeatures = (audioBuffer) => {
+            const channelData = audioBuffer.getChannelData(0);
+            const sampleRate = audioBuffer.sampleRate;
+            const frameSize = Math.max(1, Math.floor(sampleRate * 0.03));
+            const numFrames = Math.floor(channelData.length / frameSize);
+            const SILENCE_THRESHOLD = 0.02;
+            let totalZeroCrossings = 0, silentFrames = 0;
+            const frameEnergies = [];
+            for (let f = 0; f < numFrames; f++) {
+                const start = f * frameSize;
+                const end = Math.min(start + frameSize, channelData.length);
+                let zc = 0, sumSquares = 0;
+                for (let i = start; i < end - 1; i++) {
+                    if ((channelData[i] >= 0 && channelData[i + 1] < 0) || (channelData[i] < 0 && channelData[i + 1] >= 0)) zc++;
+                    sumSquares += channelData[i] * channelData[i];
+                }
+                const rms = Math.sqrt(sumSquares / Math.max(1, end - start));
+                frameEnergies.push(rms);
+                totalZeroCrossings += zc;
+                if (rms < SILENCE_THRESHOLD) silentFrames++;
+            }
+            const avgZCR = numFrames > 0 ? +(totalZeroCrossings / numFrames).toFixed(2) : 0;
+            const silenceRatio = numFrames > 0 ? +((silentFrames / numFrames) * 100).toFixed(1) : 0;
+            const meanEnergy = frameEnergies.length ? frameEnergies.reduce((a, b) => a + b, 0) / frameEnergies.length : 0;
+            const energyVariance = frameEnergies.length ? frameEnergies.reduce((a, b) => a + Math.pow(b - meanEnergy, 2), 0) / frameEnergies.length : 0;
+            const energyStdDev = +Math.sqrt(energyVariance).toFixed(4);
+            let breathGapCount = 0;
+            for (let f = 1; f < numFrames; f++) {
+                if (frameEnergies[f - 1] < SILENCE_THRESHOLD && frameEnergies[f] >= SILENCE_THRESHOLD) breathGapCount++;
+            }
+            return { avgZCR, silenceRatio, energyStdDev, meanEnergy: +meanEnergy.toFixed(4), breathGapCount, durationSec: +audioBuffer.duration.toFixed(2), numFrames };
         };
 
         // ==========================================
@@ -1338,7 +1483,7 @@ const PromptOptimizer = () => {
     );
 };
 
-        const ActiveThreats = () => {
+       const ActiveThreats = ({ defenseMode = false }) => {
             const [index, setIndex] = useState(0);
 
             useEffect(() => {
@@ -1354,8 +1499,8 @@ const PromptOptimizer = () => {
                 <div className="bg-slate-900 border border-red-900/50 rounded-xl p-4 mb-6 flex items-center gap-4 relative overflow-hidden group">
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-600"></div>
                     <div className="flex-shrink-0 flex items-center gap-2 text-red-500 font-bold uppercase tracking-wider text-xs">
-                        <span className="live-dot"></span>
-                        Live Threats
+                       <span className="live-dot"></span>
+                        {defenseMode ? "Classified Intel Feed" : "Live Threats"}
                     </div>
                     <div className="flex-1 h-6 relative overflow-hidden">
                         <a 
@@ -1375,7 +1520,7 @@ const PromptOptimizer = () => {
         };
 
 // Voice
-const VoiceForensics = () => {
+const VoiceForensics = ({ adminMode = false, onScan = () => {} }) => {
   // --- state (simple, human-friendly names) ---
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -1395,7 +1540,8 @@ const VoiceForensics = () => {
   const timerRef = useRef(null);
   const chunksRef = useRef([]);
   const animationFrameRef = useRef(null);
-  const audioElementsRef = useRef({});
+ const audioElementsRef = useRef({});
+  const lastLevelsRef = useRef(new Array(20).fill(10)); // snapshot of latest waveform frame
 
   // Clean up on unmount: stop any running audio, cancel frames, close audioContext, revoke URLs
   useEffect(() => {
@@ -1458,13 +1604,14 @@ const VoiceForensics = () => {
 
           // create a placeholder recording; we'll update duration shortly if we can
           const id = Date.now();
-          const placeholder = {
+         const placeholder = {
             id,
             url,
             date: new Date().toLocaleString(),
             duration: recordingTime, // best-effort
             name: `Audio Evidence ${recordings.length + 1}`,
-            analysis: null
+            analysis: null,
+            waveform: [...lastLevelsRef.current] // freeze the last visualizer frame
           };
 
           // add immediately so UI updates, then try to read accurate duration
@@ -1504,7 +1651,8 @@ const VoiceForensics = () => {
         const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
         analyserRef.current.getByteFrequencyData(dataArray);
         const newLevels = smoothLevels(Array.from(dataArray));
-        setAudioLevels(newLevels);
+       setAudioLevels(newLevels);
+        lastLevelsRef.current = newLevels;
         animationFrameRef.current = requestAnimationFrame(updateVisualizer);
       };
       updateVisualizer();
@@ -1581,32 +1729,49 @@ const VoiceForensics = () => {
 
   // Simulated analysis (lightweight). This fills rec.analysis with score, label, details, artifacts.
   // In a real app you'd call a backend model. Here we keep behavior deterministic-ish by seeding from id.
-  const analyzeRecording = (id) => {
+  const analyzeRecording = async (id) => {
+    const rec = recordings.find(r => r.id === id);
+    if (!rec) return;
     setAnalyzingId(id);
-    // small simulated delay to mimic network / processing
-    setTimeout(() => {
-      setRecordings(prev => prev.map(rec => {
-        if (rec.id !== id) return rec;
+    try {
+      const response = await fetch(rec.url);
+      const arrayBuffer = await response.arrayBuffer();
+      const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioBuffer = await tempCtx.decodeAudioData(arrayBuffer);
+      const features = computeAudioFeatures(audioBuffer);
+      try { await tempCtx.close(); } catch (e) {}
 
-        // pseudo-random but seeded from id to get reproducible-ish results in session
-        const seed = (id % 1000) / 1000;
-        const isFake = seed > 0.45; // about half the time
-        const score = isFake ? Math.floor(70 + (seed * 30)) : Math.floor(seed * 45);
-        const label = isFake ? "Synthetic Signature Detected" : "Natural Voice Patterns";
-        const details = isFake
-          ? "Zero-breath artifact; faint metallic shimmer on sibilants. Pitch looks unusually steady in places."
-          : "Natural breathing and pitch variation detected; subtle room tone present.";
-        const artifacts = {
-          zeroBreath: isFake,
-          shimmer: isFake && (seed > 0.6),
-          pitchStable: isFake && (seed > 0.55),
-          latency: Math.random() > 0.8 // latency is more random
-        };
+      const expectedBreaths = Math.max(1, Math.floor(features.durationSec / 5));
+      const breathDeficit = Math.max(0, expectedBreaths - features.breathGapCount);
 
-        return { ...rec, analysis: { score, label, details, artifacts } };
-      }));
+      let score = 0;
+      score += Math.min(40, breathDeficit * 10);
+      score += features.silenceRatio < 5 ? 20 : 0;
+      score += features.energyStdDev < 0.01 ? 25 : 0;
+      score += (features.avgZCR > 0 && features.avgZCR < 2) ? 15 : 0;
+      score = Math.min(96, Math.max(4, Math.round(score)));
+
+      const isFake = score > 50;
+      const label = isFake ? "Synthetic Signature Detected" : "Natural Voice Patterns";
+      const details = isFake
+        ? `Only ${features.breathGapCount} breath-gap(s) detected over ${features.durationSec}s (~${expectedBreaths} expected), silence ratio ${features.silenceRatio}%, low energy variance (${features.energyStdDev}). Consistent with synthetic/TTS audio.`
+        : `Detected ${features.breathGapCount} natural breath-gap(s) and a silence ratio of ${features.silenceRatio}%, consistent with natural speech.`;
+
+      const artifacts = {
+        zeroBreath: breathDeficit > 0,
+        shimmer: features.avgZCR > 0 && features.avgZCR < 2,
+        pitchStable: features.energyStdDev < 0.01,
+        latency: false // not measurable from a static file
+      };
+
+      setRecordings(prev => prev.map(r => r.id === id ? { ...r, analysis: { score, label, details, artifacts, rawFeatures: features } } : r));
+      onScan();
+    } catch (err) {
+      console.error('Audio analysis failed:', err);
+      alert('Could not analyze this audio. Try re-recording or uploading a different file.');
+    } finally {
       setAnalyzingId(null);
-    }, 1100);
+    }
   };
 
   // Delete safely: pause audio if playing, remove from arrays, revoke URL
@@ -1794,10 +1959,17 @@ const VoiceForensics = () => {
 
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-slate-200 truncate">{rec.name}</div>
-                    <div className="text-xs text-slate-400 flex items-center gap-2 mt-1">
+                  <div className="text-xs text-slate-400 flex items-center gap-2 mt-1">
                       <span>{rec.date}</span>
                       {rec.duration > 0 && <span>• {formatTime(rec.duration)}</span>}
                     </div>
+                    {rec.waveform && (
+                      <div className="flex items-end gap-[2px] h-6 mt-2" aria-hidden>
+                        {rec.waveform.map((lvl, i) => (
+                          <div key={i} className="w-1 bg-indigo-500/50 rounded-full" style={{ height: `${Math.max(10, lvl)}%` }} />
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex gap-2 items-center">
@@ -1811,6 +1983,13 @@ const VoiceForensics = () => {
                       {analyzingId === rec.id ? <div className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full" /> : <Icon path={Icons.Activity} size={16} />}
                     </Button>
 
+                   <button
+                      onClick={() => downloadBlobUrlAsFile(rec.url, `${rec.name.replace(/\s+/g, '_')}.webm`)}
+                      className="p-2 text-slate-300 hover:text-indigo-400 hover:bg-indigo-900/20 rounded-lg transition-colors"
+                      aria-label="Download recording" title="Download as audio file"
+                    >
+                      <Icon path={Icons.Download} size={18} />
+                    </button>
                     <button onClick={() => deleteRecording(rec.id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-900/20 rounded-lg transition-colors" aria-label="Delete recording">
                       <Icon path={Icons.Trash2} size={18} />
                     </button>
@@ -1847,7 +2026,21 @@ const VoiceForensics = () => {
                         <button className="text-xs text-indigo-400" onClick={() => revealAnalysis(rec)}>Reveal Comparison</button>
                       </div>
                     </div>
-                    <p className="text-slate-400 text-xs">{rec.analysis.details}</p>
+             <p className="text-slate-400 text-xs">{rec.analysis.details}</p>
+                    <div className="mt-2">
+                      <button
+                        className="text-xs text-emerald-400 underline"
+                        onClick={() => downloadJSON(`voice-forensics-report-${rec.id}.json`, generateReport('voice-forensics', { fileName: rec.name, durationSec: rec.duration, ...rec.analysis }))}
+                      >
+                        Export Report
+                      </button>
+                    </div>
+                    {adminMode && rec.analysis.rawFeatures && (
+                      <div className="mt-2 p-2 bg-slate-950 rounded border border-slate-800">
+                        <div className="text-[10px] text-emerald-400 font-mono uppercase mb-1">Raw Detection Vector</div>
+                        <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap">{JSON.stringify(rec.analysis.rawFeatures, null, 2)}</pre>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -2043,7 +2236,7 @@ const VoiceForensics = () => {
         };
 
    //TEXT
-const TextForensics = () => {
+const TextForensics = ({ adminMode = false, onScan = () => {} }) => {
   // core text state
   const [text, setText] = useState("");
   const [result, setResult] = useState(null);
@@ -2088,6 +2281,12 @@ const [textPractice, setTextPractice] = useState(true); // Enabled by default
   // small lexical helpers
   const isContraction = (w) => /'\w|n't|’\w/i.test(w);
   const cleanToken = (t) => (t || '').toLowerCase().replace(/[^\w]/g,'');
+const detectNonEnglish = (content) => {
+    const nonLatinScript = /[\u0400-\u04FF\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF\u0600-\u06FF\u0900-\u097F]/.test(content);
+    const letters = (content.match(/[a-zA-Z]/g) || []).length;
+    const totalChars = content.replace(/\s/g, '').length || 1;
+    return nonLatinScript || (letters / totalChars) < 0.6;
+  };
 
   // HighlightedText: highlights AI tokens, repeated words, long/rare words, and user selections
   const HighlightedText = ({ content, analysis }) => {
@@ -2136,8 +2335,7 @@ const [textPractice, setTextPractice] = useState(true); // Enabled by default
   };
 
   // Analyze: many heuristics collected into result
-  const analyze = () => {
-    if (text.length < 50) return;
+  const runFullAnalysis = () => {
     setIsScanning(true);
     setResult(null);
 
@@ -2212,10 +2410,11 @@ const [textPractice, setTextPractice] = useState(true); // Enabled by default
 
       aiScore = Math.min(99, Math.round(aiScore));
 
-      setResult({
+    setResult({
         score: aiScore,
         burstiness: +(burstiness.toFixed(2)),
         avgLen: +(avgLen.toFixed(1)),
+        avgWordLen,
         buzzCount,
         aiWords: Array.from(new Set(aiWordsFound)),
         repeatedWords,
@@ -2228,10 +2427,20 @@ const [textPractice, setTextPractice] = useState(true); // Enabled by default
       });
 
       // reset user selections for a fresh practice round but keep practice mode flag
-      setUserWordGuesses({});
+setUserWordGuesses({});
       setUserSentenceGuesses({});
       setIsScanning(false);
+      onScan();
     }, 900);
+  };
+
+  const analyze = () => {
+    if (text.length < 50) return;
+    if (detectNonEnglish(text)) {
+      setResult({ nonEnglish: true });
+      return;
+    }
+    runFullAnalysis();
   };
 
   // Toggle sentence guess
@@ -2241,8 +2450,8 @@ const [textPractice, setTextPractice] = useState(true); // Enabled by default
   };
 
   // Reveal comparison: compute detailed matches and open modal with results
-  const revealComparison = () => {
-    if (!result) { alert("Run a scan first."); return; }
+const revealComparison = () => {
+    if (!result || result.nonEnglish) { alert("Run a full scan first."); return; }
     const tokens = wordsWithIndexes(text);
     const aiSet = new Set((result.aiWords||[]).map(w=>w.toLowerCase()));
     const userMarkedTokenIdxs = Object.keys(userWordGuesses).filter(k=>userWordGuesses[k]).map(n=>Number(n));
@@ -2396,7 +2605,19 @@ const [textPractice, setTextPractice] = useState(true); // Enabled by default
           </div>
 
           <div className="relative flex-grow min-h-[420px]">
-            {result ? (
+{result && result.nonEnglish ? (
+              <div className="w-full h-full p-6 rounded-2xl bg-amber-950/20 border border-amber-700/40 shadow-inner flex flex-col items-center justify-center text-center gap-4">
+                <Icon path={Icons.Alert} size={40} className="text-amber-400" />
+                <div className="text-amber-200 font-bold text-lg">Non-English Text Detected</div>
+                <p className="text-sm text-slate-300 max-w-md leading-relaxed">
+                  This scanner's vocabulary clusters ("delve", "synergy", "leverage") and connector list are English-only. Scoring other languages against them would be unreliable.
+                </p>
+                <div className="flex gap-3">
+                  <Button variant="secondary" onClick={() => setResult(null)} icon={Icons.X}>Edit Text</Button>
+                  <Button onClick={runFullAnalysis} icon={Icons.Wand}>Force Analyze Anyway</Button>
+                </div>
+              </div>
+            ) : result ? (
               <div className="w-full h-full p-6 rounded-2xl bg-slate-800 border border-slate-700 shadow-inner overflow-y-auto font-mono text-sm">
                 <HighlightedText content={text} analysis={result} />
                 <div className="mt-4">
@@ -2416,17 +2637,22 @@ const [textPractice, setTextPractice] = useState(true); // Enabled by default
             {isScanning && <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center rounded-2xl backdrop-blur-sm z-10"><div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent"></div></div>}
           </div>
 
-          <div className="mt-4 flex gap-3">
+          <div className="mt-4 flex gap-3 flex-wrap">
             <Button onClick={analyze} disabled={text.length < 50 || isScanning} icon={Icons.Search} className="flex-1">
               {isScanning ? "Processing..." : "Run Deep Scan"}
             </Button>
             {result && <Button variant="secondary" onClick={() => { setResult(null); setUserWordGuesses({}); setUserSentenceGuesses({}); }} icon={Icons.RefreshCw}>Reset</Button>}
-            <Button variant="ghost" onClick={revealComparison} disabled={!result} icon={Icons.Check}>Reveal Comparison</Button>
+            <Button variant="ghost" onClick={revealComparison} disabled={!result || result.nonEnglish} icon={Icons.Check}>Reveal Comparison</Button>
+            {result && !result.nonEnglish && (
+              <Button variant="secondary" onClick={() => downloadJSON(`text-forensics-report-${Date.now()}.json`, generateReport('text-forensics', { inputPreview: text.slice(0, 200), inputLength: text.length, ...result }))} icon={Icons.FileText}>
+                Export Report
+              </Button>
+            )}
           </div>
         </div>
 
-        <div className="space-y-6">
-          {result ? (
+<div className="space-y-6">
+          {result && !result.nonEnglish ? (
             <div className="space-y-6 animate-fade-in">
               <Card className="text-center relative overflow-hidden border-0 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
                 <div className="relative z-10">
@@ -2458,8 +2684,7 @@ const [textPractice, setTextPractice] = useState(true); // Enabled by default
               <Card title="Advanced Metrics">
                 <div className="grid grid-cols-2 gap-3 text-sm text-slate-300">
                   <div><strong>Type-token ratio:</strong> {result.typeTokenRatio}</div>
-                  <div><strong>Avg word len:</strong> {result.avgWordLen ?? result.avgWordLen}</div>
-                  <div><strong>Contractions:</strong> {result.contractionCount}</div>
+<div><strong>Avg word len:</strong> {result.avgWordLen}</div>                  <div><strong>Contractions:</strong> {result.contractionCount}</div>
                   <div><strong>Punct. complexity:</strong> {result.punctuationComplexity}</div>
                   <div className="col-span-2"><strong>Repeated words:</strong> {result.repeatedWords.length ? result.repeatedWords.join(', ') : '—'}</div>
                 </div>
@@ -2473,8 +2698,20 @@ const [textPractice, setTextPractice] = useState(true); // Enabled by default
                   <div><strong>Typos & Idiosyncrasies:</strong> humans occasionally make mistakes; AI often does not.</div>
                   <div><strong>Practice:</strong> mark tokens & sentences in Practice Mode, then Reveal Comparison to see what you got right.</div>
                 </div>
-              </Card>
+             </Card>
+
+              {adminMode && (
+                <Card title="Raw Detection Vector (Admin)" icon={Icons.Terminal}>
+                  <pre className="text-[10px] text-emerald-400 font-mono whitespace-pre-wrap max-h-56 overflow-y-auto">{JSON.stringify(result, null, 2)}</pre>
+                </Card>
+              )}
             </div>
+          ) : result && result.nonEnglish ? (
+            <Card className="h-full flex flex-col items-center justify-center text-center p-12 border-amber-700/40">
+              <Icon path={Icons.Alert} size={48} className="text-amber-400 mb-3" />
+              <h3 className="text-lg font-bold text-amber-200">Language Notice</h3>
+              <p className="text-sm text-slate-400 mt-2">Metrics need English text — or click "Force Analyze Anyway" on the left.</p>
+            </Card>
           ) : (
             <Card className="h-full flex flex-col items-center justify-center text-center p-12 opacity-50 border-dashed">
               <div className="mb-4 text-slate-600"><Icon path={Icons.Terminal} size={64} /></div>
@@ -2588,9 +2825,151 @@ const [textPractice, setTextPractice] = useState(true); // Enabled by default
     </div>
   );
 };
+      const COLOR_CLASSES = {
+    red: { bar: 'bg-red-500', iconBg: 'bg-red-500/10', iconText: 'text-red-400', border: 'border-red-500/30' },
+    orange: { bar: 'bg-orange-500', iconBg: 'bg-orange-500/10', iconText: 'text-orange-400', border: 'border-orange-500/30' },
+    yellow: { bar: 'bg-yellow-500', iconBg: 'bg-yellow-500/10', iconText: 'text-yellow-400', border: 'border-yellow-500/30' },
+    blue: { bar: 'bg-blue-500', iconBg: 'bg-blue-500/10', iconText: 'text-blue-400', border: 'border-blue-500/30' },
+    purple: { bar: 'bg-purple-500', iconBg: 'bg-purple-500/10', iconText: 'text-purple-400', border: 'border-purple-500/30' },
+    indigo: { bar: 'bg-indigo-500', iconBg: 'bg-indigo-500/10', iconText: 'text-indigo-400', border: 'border-indigo-500/30' },
+    slate: { bar: 'bg-slate-500', iconBg: 'bg-slate-500/10', iconText: 'text-slate-400', border: 'border-slate-500/30' },
+    pink: { bar: 'bg-pink-500', iconBg: 'bg-pink-500/10', iconText: 'text-pink-400', border: 'border-pink-500/30' },
+    green: { bar: 'bg-green-500', iconBg: 'bg-green-500/10', iconText: 'text-green-400', border: 'border-green-500/30' },
+    emerald: { bar: 'bg-emerald-500', iconBg: 'bg-emerald-500/10', iconText: 'text-emerald-400', border: 'border-emerald-500/30' },
+    cyan: { bar: 'bg-cyan-500', iconBg: 'bg-cyan-500/10', iconText: 'text-cyan-400', border: 'border-cyan-500/30' }
+};
+const getColorClasses = (color) => COLOR_CLASSES[color] || COLOR_CLASSES.slate;
 
+const SCAM_DATABASE = [
+    { title: "The 3-Second Clone", icon: Icons.Mic, color: "red", tag: "AI Voice", hook: "Relative in jail/hospital calling you.", tech: "Voice cloning from 3s social media clips.", defense: "Ask for a pre-agreed 'Safe Word'." },
+    { title: "Grandparent Scam", icon: Icons.User, color: "red", tag: "Social", hook: "'Grandma, I'm in trouble, don't tell mom.'", tech: "Emotional manipulation + poor audio quality excuses.", defense: "Call the parents/guardians to verify." },
+    { title: "The Jury Duty Warrant", icon: Icons.Shield, color: "orange", tag: "Authority", hook: "Police call: 'You missed jury duty. Pay fine or arrest.'", tech: "Spoofed Caller ID matching local police.", defense: "Real police NEVER call for fines. Hang up." },
+    { title: "IRS Tax Debt", icon: Icons.FileText, color: "orange", tag: "Authority", hook: "Robocall: 'Your SSN is suspended due to tax fraud.'", tech: "Fear induction.", defense: "The IRS sends letters, never calls. Check irs.gov." },
+    { title: "Utilities Shutoff", icon: Icons.Zap, color: "yellow", tag: "Urgency", hook: "Power/Water company: 'Pay in 30 mins or we cut power.'", tech: "Timing (usually Friday afternoons).", defense: "Hang up. Call the number on your actual utility bill." },
+    { title: "ICE / Immigration Threat", icon: Icons.Globe, color: "red", tag: "Authority", hook: "Threat of deportation unless 'bond' is paid.", tech: "Targeting immigrant communities.", defense: "Immigration does not take payment over phone." },
+    { title: "Kidnapping Hoax", icon: Icons.Alert, color: "red", tag: "Extreme", hook: "Screaming voice in background: 'We have your daughter.'", tech: "Stock screaming audio or AI voice.", defense: "Call/Text the 'kidnapped' person immediately." },
+    { title: "The Browser Locker", icon: Icons.Lock, color: "blue", tag: "Tech Support", hook: "Loud siren + 'VIRUS DETECTED' fullscreen popup.", tech: "HTML Fullscreen API (Not a real virus).", defense: "Hold Power Button 5s or press Esc. Do not call." },
+    { title: "Fake CAPTCHA Malware", icon: Icons.Terminal, color: "purple", tag: "Malware", hook: "'Verify you are human: Press Win+R, paste this code.'", tech: "PowerShell script injection.", defense: "NEVER paste code into the 'Run' box." },
+    { title: "Quishing (QR Phishing)", icon: Icons.Target, color: "indigo", tag: "Phishing", hook: "Parking meter sticker or '2FA Reset' email QR.", tech: "QR codes bypass email text filters.", defense: "Inspect URL preview before opening." },
+    { title: "Geek Squad Invoice", icon: Icons.FileText, color: "slate", tag: "Phishing", hook: "Email: 'You were charged $499 for renewal.'", tech: "Induces panic to make you call their 'refund' center.", defense: "Check your actual bank statement first." },
+    { title: "AnyDesk / TeamViewer", icon: Icons.Monitor, color: "red", tag: "Remote Access", hook: "'Let me connect to your PC to fix the hack.'", tech: "Remote Access Trojans (RAT).", defense: "NEVER grant remote access to a cold caller." },
+    { title: "Google Voice Code", icon: Icons.Mic, color: "blue", tag: "2FA", hook: "'I sent a code to prove you are real. Read it to me.'", tech: "They are setting up a Google Voice # using YOUR phone.", defense: "Never share a 6-digit code sent to you." },
+    { title: "The 'Clickfix' Infection", icon: Icons.Monitor, color: "purple", tag: "Malware", hook: "Fake 'Word Update' or 'Chrome Update' popup on websites.", tech: "Drive-by download.", defense: "Only update apps via their official settings menu." },
+    { title: "Fake Zoom Installer", icon: Icons.Video, color: "blue", tag: "Malware", hook: "Google Ad for 'Zoom Download' leads to fake site.", tech: "SEO Poisoning.", defense: "Check URL carefully. Use zoom.us only." },
+    { title: "Pig Butchering", icon: Icons.Heart, color: "pink", tag: "Crypto", hook: "Romance + 'I can teach you to trade crypto'.", tech: "Fake trading apps showing massive profits.", defense: "No video call = Scam. Never trust 'guaranteed' returns." },
+    { title: "Rug Pull", icon: Icons.TrendingUp, color: "pink", tag: "Crypto", hook: "New coin/NFT project with massive hype.", tech: "Devs drain liquidity pool.", defense: "Check contract audits and team dox status." },
+    { title: "Metamask 'Verify'", icon: Icons.Lock, color: "orange", tag: "Crypto", hook: "Email/DM: 'Verify your wallet to avoid suspension.'", tech: "Drainer script steals seed phrase.", defense: "Wallets NEVER need verification. Never share seed phrase." },
+    { title: "Fake Airdrop", icon: Icons.Gift, color: "green", tag: "Crypto", hook: "Free tokens appearing in your wallet.", tech: "Interacting with the token triggers a drainer.", defense: "Ignore/Hide unknown tokens. Do not swap them." },
+    { title: "Zelle 'Business' Upgrade", icon: Icons.Briefcase, color: "purple", tag: "Banking", hook: "FB Marketplace buyer: 'I need to pay you extra to upgrade account.'", tech: "Fake email confirmation.", defense: "Zelle has no 'Business Upgrade' fee." },
+    { title: "Check Overpayment", icon: Icons.FileText, color: "green", tag: "Banking", hook: "They send a check for $2000, ask you to wire back $500.", tech: "The check will bounce weeks later.", defense: "Wait 30 days for check to fully clear." },
+    { title: "PayPal 'Friends & Family'", icon: Icons.CreditCard, color: "blue", tag: "Banking", hook: "Seller asks for F&F payment to 'save fees'.", tech: "Removes Buyer Protection.", defense: "Always use 'Goods & Services' for strangers." },
+    { title: "Task Fraud", icon: Icons.Briefcase, color: "emerald", tag: "Job Scam", hook: "'Earn $200/hr clicking buttons/optimizing apps.'", tech: "Fake dashboard. Requires 'deposit' to withdraw pay.", defense: "Real jobs do not ask you to pay to work." },
+    { title: "LinkedIn Voice Harvest", icon: Icons.Mic, color: "blue", tag: "Corporate", hook: "Fake recruiter calls, asks basic Qs, hangs up.", tech: "Recording voice for AI banking bypass.", defense: "Verify recruiter profile first." },
+    { title: "The Car Wrap", icon: Icons.Truck, color: "yellow", tag: "Job Scam", hook: "'Get paid $500/week to wrap your car with Red Bull ads.'", tech: "Fake check for 'wrap specialist' (who is the scammer).", defense: "Red Bull does not hire random cars." },
+    { title: "Modeling Scout", icon: Icons.Camera, color: "pink", tag: "Exploitation", hook: "DM: 'You have the look. Pay for a portfolio shoot.'", tech: "Advance fee fraud.", defense: "Legit agencies take commission, not upfront fees." },
+    { title: "Nanny / Caregiver", icon: Icons.User, color: "purple", tag: "Job Scam", hook: "Hired instantly without interview. Sends check for 'supplies'.", tech: "Check fraud.", defense: "Always meet in person or video call first." },
+    { title: "Mystery Shopper", icon: Icons.ShoppingBag, color: "emerald", tag: "Job Scam", hook: "'Buy gift cards to test the store service.'", tech: "They ask for the card codes.", defense: "Mystery shoppers are never paid in advance by check." },
+    { title: "The Phantom Rental", icon: Icons.Home, color: "cyan", tag: "Housing", hook: "Cheap rent, landlord is 'missionary' abroad.", tech: "Stolen photos.", defense: "Reverse image search. Never pay before viewing." },
+    { title: "The 'Hi Mum' Text", icon: Icons.MessageCircle, color: "green", tag: "Social", hook: "'Lost phone, this is my new number.'", tech: "Mass SMS phishing.", defense: "Call the OLD number to verify." },
+    { title: "Facebook 'Courier'", icon: Icons.Box, color: "blue", tag: "Marketplace", hook: "'I am busy, sending a GLS/UPS courier with cash.'", tech: "Phishing link for 'insurance fee'.", defense: "Cash in person only. No couriers." },
+    { title: "Pet Deposit Scam", icon: Icons.Heart, color: "orange", tag: "Shopping", hook: "Purebred puppy for free/cheap, just pay shipping.", tech: "Endless 'crate fees' and 'vaccine fees'.", defense: "Video call to see the puppy live." },
+    { title: "Tinder Verification", icon: Icons.Heart, color: "pink", tag: "Dating", hook: "Match asks you to click a link to 'verify safety'.", tech: "Credit card phishing site.", defense: "Tinder verifies via selfie, not credit card." },
+    { title: "Sextortion", icon: Icons.Video, color: "red", tag: "Blackmail", hook: "Video chat turns sexual, then they threaten to send recording to friends.", tech: "Screen recording.", defense: "Block immediately. Do NOT pay (they leak anyway)." },
+    { title: "Wrong Number (Mandy)", icon: Icons.MessageCircle, color: "pink", tag: "Social", hook: "'Is this Annie? We met at the gym.' -> Friendship.", tech: "Pig Butchering lead-in.", defense: "Ignore random texts. Don't engage." },
+    { title: "Amazon 'Brushing'", icon: Icons.Package, color: "orange", tag: "Shopping", hook: "Random cheap packages arrive at your house.", tech: "Seller boosting their own rating using your address.", defense: "Change passwords. Keep the free stuff." },
+    { title: "Student Loan Forgiveness", icon: Icons.Book, color: "blue", tag: "Gov", hook: "Call: 'Qualify for Biden forgiveness today.'", tech: "Stealing FSA ID login.", defense: "Apply only at studentaid.gov." },
+    { title: "Sugar Baby Scam", icon: Icons.DollarSign, color: "pink", tag: "Social", hook: "'I want to spoil you. What is your bank login to deposit checks?'", tech: "Money laundering / Account takeover.", defense: "Never share login credentials." },
+    { title: "Fake Charity", icon: Icons.Heart, color: "red", tag: "Disaster", hook: "Donations for recent earthquake/war.", tech: "Lookalike websites.", defense: "Use CharityNavigator to verify orgs." },
+    { title: "Counterfeit Merch", icon: Icons.ShoppingCart, color: "slate", tag: "Shopping", hook: "Ads for 90% off luxury goods.", tech: "Bait and switch (receive cheap knockoff).", defense: "If it's too good to be true, it is." },
+    { title: "Discord Nitro Scam", icon: Icons.MessageSquare, color: "indigo", tag: "Gaming", hook: "DM: 'Free Nitro for 3 months, scan QR.'", tech: "QR Token Logging.", defense: "Never scan Discord QRs sent by strangers." },
+    { title: "Steam Admin Scam", icon: Icons.MessageSquare, color: "blue", tag: "Gaming", hook: "'I accidentally reported your account. Talk to this admin.'", tech: "Fake admin steals account.", defense: "Steam admins never contact via chat." },
+    { title: "Fake Influencer", icon: Icons.Instagram, color: "pink", tag: "Social", hook: "'You won the giveaway! Pay shipping.'", tech: "Impersonator accounts.", defense: "Check the handle spelling carefully." },
+    { title: "Booking.com Diversion", icon: Icons.Map, color: "blue", tag: "Travel", hook: "Message inside app: 'Payment failed, use this link.'", tech: "Hacked hotel accounts.", defense: "Only pay through the platform's main button." }
+];
+
+const ScamDefense = () => {
+    const [search, setSearch] = useState('');
+
+    const filteredScams = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return SCAM_DATABASE;
+        return SCAM_DATABASE.filter(scam =>
+            scam.title.toLowerCase().includes(q) ||
+            scam.tag.toLowerCase().includes(q) ||
+            scam.hook.toLowerCase().includes(q) ||
+            scam.tech.toLowerCase().includes(q) ||
+            scam.defense.toLowerCase().includes(q)
+        );
+    }, [search]);
+
+    return (
+        <div className="space-y-8 animate-fade-in pb-20">
+            <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-slate-700 pb-6">
+                <div>
+                    <h2 className="text-4xl font-black text-white">Threat Defense Matrix</h2>
+                    <p className="text-slate-400 mt-2">Active database of <span className="text-indigo-400 font-bold">{SCAM_DATABASE.length} known social engineering vectors</span> and defense protocols.</p>
+                </div>
+                <div className="flex gap-2 w-full md:w-auto">
+                    <div className="relative flex-1 md:w-64">
+                        <Icon path={Icons.Search} size={16} className="absolute left-3 top-3.5 text-slate-500" />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Search threats..."
+                            className="w-full bg-slate-800 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {filteredScams.length === 0 ? (
+                <div className="text-center py-16 text-slate-500">
+                    <Icon path={Icons.Search} size={48} className="opacity-30 mx-auto mb-4" />
+                    No threats match "{search}".
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-fr">
+                    {filteredScams.map((scam, i) => {
+                        const c = getColorClasses(scam.color);
+                        return (
+                            <div key={i} className="scam-card group relative bg-slate-800 border border-slate-700 hover:border-indigo-500 rounded-2xl p-6 transition-all hover:shadow-2xl hover:-translate-y-1 flex flex-col">
+                                <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-2xl ${c.bar}`}></div>
+                                <div className="flex justify-between items-start mb-4 mt-2">
+                                    <div className={`p-3 rounded-xl ${c.iconBg} ${c.iconText}`}>
+                                        <Icon path={scam.icon} size={24} />
+                                    </div>
+                                    <Badge color={scam.color}>{scam.tag}</Badge>
+                                </div>
+                                <h3 className="font-bold text-xl text-white mb-2 group-hover:text-indigo-400 transition-colors">{scam.title}</h3>
+                                <div className="space-y-4 flex-1">
+                                    <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
+                                        <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">The Hook</p>
+                                        <p className="text-sm text-slate-300 leading-relaxed">"{scam.hook}"</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">The Technology</p>
+                                        <p className="text-sm text-slate-400">{scam.tech}</p>
+                                    </div>
+                                </div>
+                                <div className={`mt-6 pt-4 border-t ${c.border}`}>
+                                    <div className="flex items-center gap-2">
+                                        <Icon path={Icons.Shield} size={16} className={c.iconText} />
+                                        <span className={`text-xs font-bold uppercase tracking-wide ${c.iconText}`}>Defense Protocol</span>
+                                    </div>
+                                    <p className="text-sm text-white mt-1 font-medium">{scam.defense}</p>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
 const LandingPage = ({ onStart }) => {
             // Generate Stars
+      
+};
             const stars = useMemo(() => {
                 return [...Array(60)].map((_, i) => ({
                     id: i,
@@ -2695,7 +3074,39 @@ const LandingPage = ({ onStart }) => {
                                     </div>
                                 ))}
                             </div>
+{/* Metrics bar */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-4xl">
+                                {[
+                                    { value: `${SCAM_DATABASE.length}+`, label: "Threat Vectors Catalogued" },
+                                    { value: `${COURSES.length}`, label: "Certified Training Modules" },
+                                    { value: "100%", label: "Client-Side Analysis" }
+                                ].map((m, i) => (
+                                    <div key={i} className="glass-panel rounded-2xl p-6 text-center">
+                                        <div className="text-4xl font-black text-gradient mb-1">{m.value}</div>
+                                        <div className="text-xs text-slate-400 uppercase tracking-widest font-bold">{m.label}</div>
+                                    </div>
+                                ))}
+                            </div>
 
+                            {/* Built For */}
+                            <div className="w-full max-w-5xl">
+                                <div className="text-xs font-bold text-indigo-400 uppercase tracking-[0.3em] mb-6">Built For</div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {[
+                                        { title: "Government & Defense", desc: "Threat-literacy training and forensic checklists suited to public-sector security teams.", icon: Icons.Shield },
+                                        { title: "Security Analysts", desc: "Hands-on detection labs for visual, audio, and text-based synthetic media.", icon: Icons.Target },
+                                        { title: "Corporate Teams", desc: "Scam-defense playbooks for CEO fraud, phishing, and social engineering.", icon: Icons.Briefcase }
+                                    ].map((b, i) => (
+                                        <div key={i} className="feature-card p-6 rounded-2xl text-left">
+                                            <div className="p-3 bg-indigo-500/20 rounded-xl mb-3 inline-flex text-indigo-300">
+                                                <Icon path={b.icon} size={22} />
+                                            </div>
+                                            <h4 className="font-bold text-white mb-2">{b.title}</h4>
+                                            <p className="text-xs text-slate-400 leading-relaxed">{b.desc}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                             {/* Action Area */}
                             <div className="pt-6 pb-12">
                                 <button 
@@ -2725,8 +3136,7 @@ const LandingPage = ({ onStart }) => {
             );
         };
         // --- DASHBOARD (Expanded with Live Threats) ---
-        const Dashboard = ({ userXP, userLevel, setView }) => {
-            return (
+const Dashboard = ({ userXP, userLevel, setView, defenseMode, stats, completedCoursesCount }) => {            return (
                 <div className="space-y-8 animate-fade-in">
                     <div className="relative overflow-hidden rounded-3xl bg-indigo-600 text-white p-8 md:p-12 shadow-xl shadow-none">
                         <div className="relative z-10 max-w-2xl">
@@ -2749,8 +3159,8 @@ const LandingPage = ({ onStart }) => {
                         </div>
                     </div>
 
-                    {/* NEW ACTIVE THREATS COMPONENT */}
-                    <ActiveThreats />
+      {/* NEW ACTIVE THREATS COMPONENT */}
+                    <ActiveThreats defenseMode={defenseMode} />
 
                     <div className="grid lg:grid-cols-3 gap-8">
                         {/* Status Column */}
@@ -2761,14 +3171,30 @@ const LandingPage = ({ onStart }) => {
                                     <span className="text-sm font-bold text-indigo-400">{userXP} / {userLevel * 200} XP</span>
                                 </div>
                                 <ProgressBar value={userXP} max={userLevel * 200} />
-                                <div className="mt-4 grid grid-cols-2 gap-4 text-center">
+                             <div className="mt-4 grid grid-cols-2 gap-4 text-center">
                                     <div className="bg-slate-800 p-2 rounded-lg">
-                                        <div className="text-xl font-bold text-white">12</div>
+                                        <div className="text-xl font-bold text-white">{(stats?.textScans || 0) + (stats?.voiceScans || 0)}</div>
                                         <div className="text-xs text-slate-500">Scans Run</div>
                                     </div>
                                     <div className="bg-slate-800 p-2 rounded-lg">
-                                        <div className="text-xl font-bold text-white">3</div>
+                                        <div className="text-xl font-bold text-white">{completedCoursesCount || 0}</div>
                                         <div className="text-xs text-slate-500">Badges</div>
+                                    </div>
+                                </div>
+                            </Card>
+                            <Card title="Activity Stats" icon={Icons.Activity}>
+                                <div className="grid grid-cols-3 gap-3 text-center">
+                                    <div className="bg-slate-800 p-3 rounded-lg">
+                                        <div className="text-lg font-bold text-indigo-400">{stats?.textScans || 0}</div>
+                                        <div className="text-[10px] text-slate-500 uppercase mt-1">Text Scans</div>
+                                    </div>
+                                    <div className="bg-slate-800 p-3 rounded-lg">
+                                        <div className="text-lg font-bold text-indigo-400">{stats?.voiceScans || 0}</div>
+                                        <div className="text-[10px] text-slate-500 uppercase mt-1">Voice Scans</div>
+                                    </div>
+                                    <div className="bg-slate-800 p-3 rounded-lg">
+                                        <div className="text-lg font-bold text-indigo-400">{completedCoursesCount || 0}</div>
+                                        <div className="text-[10px] text-slate-500 uppercase mt-1">Modules Done</div>
                                     </div>
                                 </div>
                             </Card>
@@ -2817,11 +3243,15 @@ const LandingPage = ({ onStart }) => {
             const [hasStarted, setHasStarted] = useState(false); // NEW: Track start state
             
             const [view, setView] = useState('home');
-            const [userXP, setUserXP] = useState(350);
-            const [userLevel, setUserLevel] = useState(3);
+            const [userXP, setUserXP] = useLocalStorage('aisentinel_userXP', 350);
+            const [userLevel, setUserLevel] = useLocalStorage('aisentinel_userLevel', 3);
             const [activeCourse, setActiveCourse] = useState(null);
-            const [quizAnswers, setQuizAnswers] = useState({});
+            const [quizAnswers, setQuizAnswers] = useLocalStorage('aisentinel_quizAnswers', {});
             const [showQuizResult, setShowQuizResult] = useState(null);
+            const [stats, setStats] = useLocalStorage('aisentinel_stats', { textScans: 0, voiceScans: 0 });
+            const [completedCourses, setCompletedCourses] = useLocalStorage('aisentinel_completedCourses', []);
+            const [defenseMode, setDefenseMode] = useState(false);
+            const [adminMode, setAdminMode] = useState(false);
 
             // Force dark mode
             useEffect(() => { document.body.className = 'dark'; }, []);
@@ -2862,7 +3292,13 @@ const LandingPage = ({ onStart }) => {
                                     <Icon path={item.icon} size={20} />
                                     {item.label}
                                 </button>
-                            ))}
+                      ))}
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-slate-800 space-y-2">
+                            <div className="text-xs font-bold text-slate-400 uppercase tracking-widest px-4 mb-2">System Settings</div>
+                            <ToggleSwitch checked={defenseMode} onChange={() => setDefenseMode(p => !p)} label="Defense Context Mode" description="Relabels live feeds for classified contexts" />
+                            <ToggleSwitch checked={adminMode} onChange={() => setAdminMode(p => !p)} label="Admin / Analyst Mode" description="Reveal raw detection vectors" />
                         </div>
                     </nav>
 
@@ -2873,10 +3309,10 @@ const LandingPage = ({ onStart }) => {
                             <span className="font-black text-lg text-white">AI<span className="text-indigo-600">Sentinel</span></span>
                         </div>
 
-                        {view === 'home' && <Dashboard userXP={userXP} userLevel={userLevel} setView={setView} />}
+        {view === 'home' && <Dashboard userXP={userXP} userLevel={userLevel} setView={setView} defenseMode={defenseMode} stats={stats} completedCoursesCount={completedCourses.length} />}
                         {view === 'visuals' && <VisualForensics />}
-                        {view === 'text' && <TextForensics />}
-                        {view === 'voice' && <VoiceForensics />}
+                        {view === 'text' && <TextForensics adminMode={adminMode} onScan={() => setStats(prev => ({ ...prev, textScans: (prev.textScans || 0) + 1 }))} />}
+                        {view === 'voice' && <VoiceForensics adminMode={adminMode} onScan={() => setStats(prev => ({ ...prev, voiceScans: (prev.voiceScans || 0) + 1 }))} />}
                         {view === 'optimizer' && <PromptOptimizer />}
                         
                         {view === 'learn' && (
@@ -2889,11 +3325,15 @@ const LandingPage = ({ onStart }) => {
                                 </div>
                                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {COURSES.map(course => (
-                                        <Card key={course.id} className="group hover:border-indigo-500 transition-colors cursor-pointer h-full flex flex-col justify-between">
+                                       <Card key={course.id} className="group hover:border-indigo-500 transition-colors cursor-pointer h-full flex flex-col justify-between relative">
+                                            {completedCourses.includes(course.id) && (
+                                                <div className="absolute top-3 right-3 z-10 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                                                    <Icon path={Icons.Check} size={10} /> Completed
+                                                </div>
+                                            )}
                                             <div onClick={() => { 
                                                 setActiveCourse(course); 
                                                 setShowQuizResult(null); 
-                                                setQuizAnswers({}); 
                                             }}>
                                                 <div className="flex items-center justify-between mb-4">
                                                     <Badge color={course.category.includes("Scam") ? "red" : course.category.includes("Visual") ? "purple" : "blue"}>{course.category}</Badge>
@@ -2917,129 +3357,7 @@ const LandingPage = ({ onStart }) => {
                             </div>
                         )}
 
-                       {view === 'scams' && (
-    <div className="space-y-8 animate-fade-in pb-20">
-        <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-slate-700 pb-6">
-            <div>
-                <h2 className="text-4xl font-black text-white">Threat Defense Matrix</h2>
-                <p className="text-slate-400 mt-2">Active database of <span className="text-indigo-400 font-bold">50+ known social engineering vectors</span> and defense protocols.</p>
-            </div>
-            {/* SEARCH & FILTER UI */}
-            <div className="flex gap-2 w-full md:w-auto">
-                 <div className="relative flex-1 md:w-64">
-                    <Icon path={Icons.Search} size={16} className="absolute left-3 top-3.5 text-slate-500" />
-                    <input 
-                        type="text" 
-                        placeholder="Search threats..." 
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                        onChange={(e) => {
-                            const val = e.target.value.toLowerCase();
-                            const cards = document.querySelectorAll('.scam-card');
-                            cards.forEach(card => {
-                                const text = card.textContent.toLowerCase();
-                                card.style.display = text.includes(val) ? 'flex' : 'none';
-                            });
-                        }}
-                    />
-                 </div>
-            </div>
-        </div>
-        
-        {/* MASSIVE SCAM DATABASE MAPPED INLINE */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-fr">
-            {[
-                // --- CATEGORY: URGENT / AUTHORITY ---
-                { title: "The 3-Second Clone", icon: Icons.Mic, color: "red", tag: "AI Voice", hook: "Relative in jail/hospital calling you.", tech: "Voice cloning from 3s social media clips.", defense: "Ask for a pre-agreed 'Safe Word'." },
-                { title: "Grandparent Scam", icon: Icons.User, color: "red", tag: "Social", hook: "'Grandma, I'm in trouble, don't tell mom.'", tech: "Emotional manipulation + poor audio quality excuses.", defense: "Call the parents/guardians to verify." },
-                { title: "The Jury Duty Warrant", icon: Icons.Shield, color: "orange", tag: "Authority", hook: "Police call: 'You missed jury duty. Pay fine or arrest.'", tech: "Spoofed Caller ID matching local police.", defense: "Real police NEVER call for fines. Hang up." },
-                { title: "IRS Tax Debt", icon: Icons.FileText, color: "orange", tag: "Authority", hook: "Robocall: 'Your SSN is suspended due to tax fraud.'", tech: "Fear induction.", defense: "The IRS sends letters, never calls. Check irs.gov." },
-                { title: "Utilities Shutoff", icon: Icons.Zap, color: "yellow", tag: "Urgency", hook: "Power/Water company: 'Pay in 30 mins or we cut power.'", tech: "Timing (usually Friday afternoons).", defense: "Hang up. Call the number on your actual utility bill." },
-                { title: "ICE / Immigration Threat", icon: Icons.Globe, color: "red", tag: "Authority", hook: "Threat of deportation unless 'bond' is paid.", tech: "Targeting immigrant communities.", defense: "Immigration does not take payment over phone." },
-                { title: "Kidnapping Hoax", icon: Icons.Alert, color: "red", tag: "Extreme", hook: "Screaming voice in background: 'We have your daughter.'", tech: "Stock screaming audio or AI voice.", defense: "Call/Text the 'kidnapped' person immediately." },
-
-                // --- CATEGORY: TECH / MALWARE ---
-                { title: "The Browser Locker", icon: Icons.Lock, color: "blue", tag: "Tech Support", hook: "Loud siren + 'VIRUS DETECTED' fullscreen popup.", tech: "HTML Fullscreen API (Not a real virus).", defense: "Hold Power Button 5s or press Esc. Do not call." },
-                { title: "Fake CAPTCHA Malware", icon: Icons.Terminal, color: "purple", tag: "Malware", hook: "'Verify you are human: Press Win+R, paste this code.'", tech: "PowerShell script injection.", defense: "NEVER paste code into the 'Run' box." },
-                { title: "Quishing (QR Phishing)", icon: Icons.Target, color: "indigo", tag: "Phishing", hook: "Parking meter sticker or '2FA Reset' email QR.", tech: "QR codes bypass email text filters.", defense: "Inspect URL preview before opening." },
-                { title: "Geek Squad Invoice", icon: Icons.FileText, color: "slate", tag: "Phishing", hook: "Email: 'You were charged $499 for renewal.'", tech: "Induces panic to make you call their 'refund' center.", defense: "Check your actual bank statement first." },
-                { title: "AnyDesk / TeamViewer", icon: Icons.Monitor, color: "red", tag: "Remote Access", hook: "'Let me connect to your PC to fix the hack.'", tech: "Remote Access Trojans (RAT).", defense: "NEVER grant remote access to a cold caller." },
-                { title: "Google Voice Code", icon: Icons.Mic, color: "blue", tag: "2FA", hook: "'I sent a code to prove you are real. Read it to me.'", tech: "They are setting up a Google Voice # using YOUR phone.", defense: "Never share a 6-digit code sent to you." },
-                { title: "The 'Clickfix' Infection", icon: Icons.Monitor, color: "purple", tag: "Malware", hook: "Fake 'Word Update' or 'Chrome Update' popup on websites.", tech: "Drive-by download.", defense: "Only update apps via their official settings menu." },
-                { title: "Fake Zoom Installer", icon: Icons.Video, color: "blue", tag: "Malware", hook: "Google Ad for 'Zoom Download' leads to fake site.", tech: "SEO Poisoning.", defense: "Check URL carefully. Use zoom.us only." },
-
-                // --- CATEGORY: FINANCIAL / CRYPTO ---
-                { title: "Pig Butchering", icon: Icons.Heart, color: "pink", tag: "Crypto", hook: "Romance + 'I can teach you to trade crypto'.", tech: "Fake trading apps showing massive profits.", defense: "No video call = Scam. Never trust 'guaranteed' returns." },
-                { title: "Rug Pull", icon: Icons.TrendingUp, color: "pink", tag: "Crypto", hook: "New coin/NFT project with massive hype.", tech: "Devs drain liquidity pool.", defense: "Check contract audits and team dox status." },
-                { title: "Metamask 'Verify'", icon: Icons.Lock, color: "orange", tag: "Crypto", hook: "Email/DM: 'Verify your wallet to avoid suspension.'", tech: "Drainer script steals seed phrase.", defense: "Wallets NEVER need verification. Never share seed phrase." },
-                { title: "Fake Airdrop", icon: Icons.Gift, color: "green", tag: "Crypto", hook: "Free tokens appearing in your wallet.", tech: "Interacting with the token triggers a drainer.", defense: "Ignore/Hide unknown tokens. Do not swap them." },
-                { title: "Zelle 'Business' Upgrade", icon: Icons.Briefcase, color: "purple", tag: "Banking", hook: "FB Marketplace buyer: 'I need to pay you extra to upgrade account.'", tech: "Fake email confirmation.", defense: "Zelle has no 'Business Upgrade' fee." },
-                { title: "Check Overpayment", icon: Icons.FileText, color: "green", tag: "Banking", hook: "They send a check for $2000, ask you to wire back $500.", tech: "The check will bounce weeks later.", defense: "Wait 30 days for check to fully clear." },
-                { title: "PayPal 'Friends & Family'", icon: Icons.CreditCard, color: "blue", tag: "Banking", hook: "Seller asks for F&F payment to 'save fees'.", tech: "Removes Buyer Protection.", defense: "Always use 'Goods & Services' for strangers." },
-                
-                // --- CATEGORY: EMPLOYMENT / TASKS ---
-                { title: "Task Fraud", icon: Icons.Briefcase, color: "emerald", tag: "Job Scam", hook: "'Earn $200/hr clicking buttons/optimizing apps.'", tech: "Fake dashboard. Requires 'deposit' to withdraw pay.", defense: "Real jobs do not ask you to pay to work." },
-                { title: "LinkedIn Voice Harvest", icon: Icons.Mic, color: "blue", tag: "Corporate", hook: "Fake recruiter calls, asks basic Qs, hangs up.", tech: "Recording voice for AI banking bypass.", defense: "Verify recruiter profile first." },
-                { title: "The Car Wrap", icon: Icons.Truck, color: "yellow", tag: "Job Scam", hook: "'Get paid $500/week to wrap your car with Red Bull ads.'", tech: "Fake check for 'wrap specialist' (who is the scammer).", defense: "Red Bull does not hire random cars." },
-                { title: "Modeling Scout", icon: Icons.Camera, color: "pink", tag: "Exploitation", hook: "DM: 'You have the look. Pay for a portfolio shoot.'", tech: "Advance fee fraud.", defense: "Legit agencies take commission, not upfront fees." },
-                { title: "Nanny / Caregiver", icon: Icons.User, color: "purple", tag: "Job Scam", hook: "Hired instantly without interview. Sends check for 'supplies'.", tech: "Check fraud.", defense: "Always meet in person or video call first." },
-                { title: "Mystery Shopper", icon: Icons.ShoppingBag, color: "emerald", tag: "Job Scam", hook: "'Buy gift cards to test the store service.'", tech: "They ask for the card codes.", defense: "Mystery shoppers are never paid in advance by check." },
-
-                // --- CATEGORY: SHOPPING / SOCIAL ---
-                { title: "The Phantom Rental", icon: Icons.Home, color: "cyan", tag: "Housing", hook: "Cheap rent, landlord is 'missionary' abroad.", tech: "Stolen photos.", defense: "Reverse image search. Never pay before viewing." },
-                { title: "The 'Hi Mum' Text", icon: Icons.MessageCircle, color: "green", tag: "Social", hook: "'Lost phone, this is my new number.'", tech: "Mass SMS phishing.", defense: "Call the OLD number to verify." },
-                { title: "Facebook 'Courier'", icon: Icons.Box, color: "blue", tag: "Marketplace", hook: "'I am busy, sending a GLS/UPS courier with cash.'", tech: "Phishing link for 'insurance fee'.", defense: "Cash in person only. No couriers." },
-                { title: "Pet Deposit Scam", icon: Icons.Heart, color: "orange", tag: "Shopping", hook: "Purebred puppy for free/cheap, just pay shipping.", tech: "Endless 'crate fees' and 'vaccine fees'.", defense: "Video call to see the puppy live." },
-                { title: "Tinder Verification", icon: Icons.Heart, color: "pink", tag: "Dating", hook: "Match asks you to click a link to 'verify safety'.", tech: "Credit card phishing site.", defense: "Tinder verifies via selfie, not credit card." },
-                { title: "Sextortion", icon: Icons.Video, color: "red", tag: "Blackmail", hook: "Video chat turns sexual, then they threaten to send recording to friends.", tech: "Screen recording.", defense: "Block immediately. Do NOT pay (they leak anyway)." },
-                { title: "Wrong Number (Mandy)", icon: Icons.MessageCircle, color: "pink", tag: "Social", hook: "'Is this Annie? We met at the gym.' -> Friendship.", tech: "Pig Butchering lead-in.", defense: "Ignore random texts. Don't engage." },
-                { title: "Amazon 'Brushing'", icon: Icons.Package, color: "orange", tag: "Shopping", hook: "Random cheap packages arrive at your house.", tech: "Seller boosting their own rating using your address.", defense: "Change passwords. Keep the free stuff." },
-                { title: "Student Loan Forgiveness", icon: Icons.Book, color: "blue", tag: "Gov", hook: "Call: 'Qualify for Biden forgiveness today.'", tech: "Stealing FSA ID login.", defense: "Apply only at studentaid.gov." },
-                { title: "Sugar Baby Scam", icon: Icons.DollarSign, color: "pink", tag: "Social", hook: "'I want to spoil you. What is your bank login to deposit checks?'", tech: "Money laundering / Account takeover.", defense: "Never share login credentials." },
-                { title: "Fake Charity", icon: Icons.Heart, color: "red", tag: "Disaster", hook: "Donations for recent earthquake/war.", tech: "Lookalike websites.", defense: "Use CharityNavigator to verify orgs." },
-                { title: "Counterfeit Merch", icon: Icons.ShoppingCart, color: "slate", tag: "Shopping", hook: "Ads for 90% off luxury goods.", tech: "Bait and switch (receive cheap knockoff).", defense: "If it's too good to be true, it is." },
-                { title: "Discord Nitro Scam", icon: Icons.MessageSquare, color: "indigo", tag: "Gaming", hook: "DM: 'Free Nitro for 3 months, scan QR.'", tech: "QR Token Logging.", defense: "Never scan Discord QRs sent by strangers." },
-                { title: "Steam Admin Scam", icon: Icons.MessageSquare, color: "blue", tag: "Gaming", hook: "'I accidentally reported your account. Talk to this admin.'", tech: "Fake admin steals account.", defense: "Steam admins never contact via chat." },
-                { title: "Fake Influencer", icon: Icons.Instagram, color: "pink", tag: "Social", hook: "'You won the giveaway! Pay shipping.'", tech: "Impersonator accounts.", defense: "Check the handle spelling carefully." },
-                { title: "Booking.com Diversion", icon: Icons.Map, color: "blue", tag: "Travel", hook: "Message inside app: 'Payment failed, use this link.'", tech: "Hacked hotel accounts.", defense: "Only pay through the platform's main button." },
-                
-            ].map((scam, i) => (
-                <div key={i} className="scam-card group relative bg-slate-800 border border-slate-700 hover:border-indigo-500 rounded-2xl p-6 transition-all hover:shadow-2xl hover:-translate-y-1 flex flex-col">
-                    {/* Color Accent Bar */}
-                    <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-2xl bg-${scam.color}-500`}></div>
-                    
-                    <div className="flex justify-between items-start mb-4 mt-2">
-                        <div className={`p-3 rounded-xl bg-${scam.color}-500/10 text-${scam.color}-400`}>
-                            <Icon path={scam.icon} size={24} />
-                        </div>
-                        <Badge color={scam.color}>{scam.tag}</Badge>
-                    </div>
-
-                    <h3 className="font-bold text-xl text-white mb-2 group-hover:text-indigo-400 transition-colors">{scam.title}</h3>
-                    
-                    <div className="space-y-4 flex-1">
-                        <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50">
-                            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">The Hook</p>
-                            <p className="text-sm text-slate-300 leading-relaxed">"{scam.hook}"</p>
-                        </div>
-                        
-                        <div>
-                            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">The Technology</p>
-                            <p className="text-sm text-slate-400">{scam.tech}</p>
-                        </div>
-                    </div>
-
-                    <div className={`mt-6 pt-4 border-t border-${scam.color}-500/30`}>
-                        <div className="flex items-center gap-2">
-                            <Icon path={Icons.Shield} size={16} className={`text-${scam.color}-400`} />
-                            <span className={`text-xs font-bold uppercase tracking-wide text-${scam.color}-400`}>Defense Protocol</span>
-                        </div>
-                        <p className="text-sm text-white mt-1 font-medium">{scam.defense}</p>
-                    </div>
-                </div>
-            ))}
-        </div>
-    </div>
-)}
+  {view === 'scams' && <ScamDefense />}
                     </main>
 
                     {/* Course Modal with Quiz */}
@@ -3064,10 +3382,22 @@ const LandingPage = ({ onStart }) => {
                             {/* UPDATED QUIZ SECTION - MULTI QUESTION SUPPORT */}
                             {activeCourse?.quizzes && (
                                 <div className="mt-8 p-6 border-t-2 border-slate-700 bg-slate-800/50 rounded-xl">
-                                    <h4 className="font-bold text-lg mb-4 flex items-center gap-2 text-white">
-                                        <Icon path={Icons.Target} className="text-indigo-500" />
-                                        Certification Exam ({activeCourse.quizzes.length} Questions)
-                                    </h4>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h4 className="font-bold text-lg flex items-center gap-2 text-white">
+                                            <Icon path={Icons.Target} className="text-indigo-500" />
+                                            Certification Exam ({activeCourse.quizzes.length} Questions)
+                                        </h4>
+                                        <button
+                                            onClick={() => {
+                                                const updated = { ...quizAnswers };
+                                                delete updated[activeCourse.id];
+                                                setQuizAnswers(updated);
+                                            }}
+                                            className="text-xs font-bold text-slate-400 hover:text-red-400 flex items-center gap-1 transition-colors"
+                                        >
+                                            <Icon path={Icons.RefreshCw} size={12} /> Reset Attempts
+                                        </button>
+                                    </div>
                                     
                                     <div className="space-y-8">
                                         {activeCourse.quizzes.map((q, qIdx) => {
@@ -3141,8 +3471,9 @@ const LandingPage = ({ onStart }) => {
                                         }
 
                                         // Only award XP if they passed (e.g. > 50%)
-                                        if (score > totalCount / 2) {
+                                     if (score > totalCount / 2) {
                                             setUserXP(p => p + activeCourse.xp); 
+                                            setCompletedCourses(prev => prev.includes(activeCourse.id) ? prev : [...prev, activeCourse.id]);
                                             alert(`Module Complete! You scored ${score}/${totalCount}. +${activeCourse.xp} XP`);
                                         } else {
                                             alert(`You scored ${score}/${totalCount}. Try again to earn XP.`);
