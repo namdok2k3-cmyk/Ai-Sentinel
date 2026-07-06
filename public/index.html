@@ -139,18 +139,11 @@
         .text-highlight-corporate { background-color: rgba(14, 165, 233, 0.2); border-bottom: 2px solid #0ea5e9; color: #bae6fd; }
         .text-highlight-filler { background-color: rgba(100, 116, 139, 0.2); border-bottom: 2px solid #64748b; color: #e2e8f0; }
 
-        /* Utility */
+    /* Utility */
       .text-gradient {
             background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
             -webkit-background-clip: text;
-            background-clip: text; /* Standard property added */
-            -webkit-text-fill-color: transparent;
-        }
-        
-      .text-gradient {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-            -webkit-background-clip: text;
-            background-clip: text; 
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         @keyframes drift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
@@ -904,7 +897,61 @@ const ChartCanvas = ({ type, data, options, height = 250 }) => {
                 </div>
             );
         };
+const useLiveNews = () => {
+            const [news, setNews] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [isLive, setIsLive] = useState(false);
 
+            useEffect(() => {
+                const CACHE_KEY = 'aisentinel_news_cache';
+                const CACHE_TTL_MS = 30 * 60 * 1000; // 30 min — keeps you well inside the free 100 req/day quota
+
+                // Serve cached news if it's still fresh, skip the network call entirely
+                try {
+                    const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+                    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+                        setNews(cached.articles);
+                        setIsLive(true);
+                        setLoading(false);
+                        return;
+                    }
+                } catch (e) {}
+
+                const API_KEY = '121bda798a5a026a30a77233e9c6d0d8';
+                const query = encodeURIComponent('"artificial intelligence" OR "machine learning" OR OpenAI OR deepfake OR chatbot');
+                const url = `https://gnews.io/api/v4/search?q=${query}&lang=en&sortby=publishedAt&max=6&apikey=${API_KEY}`;
+
+                fetch(url)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.articles && data.articles.length > 0) {
+                            const formattedNews = data.articles.map((article, index) => ({
+                                id: index,
+                                tag: "LIVE AI NEWS",
+                                date: new Date(article.publishedAt).toLocaleDateString(),
+                                title: article.title,
+                                content: article.description,
+                                url: article.url
+                            }));
+                            setNews(formattedNews);
+                            setIsLive(true);
+                            try {
+                                localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), articles: formattedNews }));
+                            } catch (e) {}
+                        } else {
+                            setNews(NEWS_FEED); // Fallback to static if key is missing/invalid/rate-limited
+                            setIsLive(false);
+                        }
+                    })
+                    .catch(() => {
+                        setNews(NEWS_FEED);
+                        setIsLive(false);
+                    })
+                    .finally(() => setLoading(false));
+            }, []);
+
+            return { news, loading, isLive };
+        };
         const formatTime = (seconds) => {
             const mins = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
@@ -1529,9 +1576,9 @@ const PromptOptimizer = () => {
                 {/* Sidebar: Examples & tips */}
                 <aside className="space-y-4">
                     <Card title="Examples (click Use)" icon={Icons.List}>
-                        <div style={{ maxHeight: 420, overflow: "auto" }} className="pr-2 custom-scrollbar">
+<div style={{ maxHeight: 420, overflow: "auto" }} className="pr-2 custom-scrollbar">
                             {filtered.map((p, i) => (
-                                <div key={i} className="flex items-center justify-between bg-slate-800 p-2 rounded-md border border-slate-700 my-1">
+                                <div key={p} className="flex items-center justify-between bg-slate-800 p-2 rounded-md border border-slate-700 my-1">
                                     <div className="text-sm text-slate-200 truncate pr-2">{p}</div>
                                     <div className="flex gap-2">
                                         <button className="text-xs px-2 py-1 rounded bg-indigo-600 hover:bg-indigo-700 font-bold" onClick={() => { setSelectedPrompt(p); setInput(""); }}>
@@ -1753,8 +1800,14 @@ const VoiceForensics = ({ adminMode = false, onScan = () => {} }) => {
   const timerRef = useRef(null);
   const chunksRef = useRef([]);
   const animationFrameRef = useRef(null);
- const audioElementsRef = useRef({});
+const audioElementsRef = useRef({});
   const lastLevelsRef = useRef(new Array(20).fill(10)); // snapshot of latest waveform frame
+  const recordingsRef = useRef([]); // mirrors `recordings` so cleanup always sees the latest list, not a stale one from mount time
+
+  // Keep recordingsRef in sync with the recordings state on every change
+  useEffect(() => {
+    recordingsRef.current = recordings;
+  }, [recordings]);
 
   // Clean up on unmount: stop any running audio, cancel frames, close audioContext, revoke URLs
   useEffect(() => {
@@ -1767,8 +1820,13 @@ const VoiceForensics = ({ adminMode = false, onScan = () => {} }) => {
       if (audioContextRef.current) {
         try { audioContextRef.current.close(); } catch (e) {}
       }
+      // pause and detach every playback <audio> element we created
+      Object.values(audioElementsRef.current).forEach(audio => {
+        try { audio.pause(); audio.src = ''; } catch (e) {}
+      });
+      audioElementsRef.current = {};
       // revoke object URLs we created
-      recordings.forEach(r => {
+      recordingsRef.current.forEach(r => {
         if (r.url && r.url.startsWith('blob:')) {
           try { URL.revokeObjectURL(r.url); } catch (e) {}
         }
@@ -1996,16 +2054,17 @@ const VoiceForensics = ({ adminMode = false, onScan = () => {} }) => {
         } catch (e) {}
         setCurrentPlayback(null);
       }
-      setRecordings(prev => prev.filter(r => r.id !== id));
-      // revoke object URL if blob
+setRecordings(prev => {
+        const target = prev.find(r => r.id === id);
+        if (target && target.url && target.url.startsWith('blob:')) {
+          try { URL.revokeObjectURL(target.url); } catch (e) {}
+        }
+        return prev.filter(r => r.id !== id);
+      });
       if (audioElementsRef.current[id]) {
         try { audioElementsRef.current[id].src = ''; } catch (e) {}
         delete audioElementsRef.current[id];
       }
-      // attempt to revoke URL in case it's a blob we created
-      // find by id in recordings (we just removed it so check previous data)
-      // (best-effort; if you stored URL earlier, it will be revoked here)
-      // NOTE: we can't access removed recording easily now; browsers will free it eventually.
     } catch (err) {
       console.error('Error deleting recording', err);
     }
@@ -3142,11 +3201,11 @@ const ScamDefense = () => {
                     No threats match "{search}".
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-fr">
+<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-fr">
                     {filteredScams.map((scam, i) => {
                         const c = getColorClasses(scam.color);
                         return (
-                            <div key={i} className="scam-card group relative bg-slate-800 border border-slate-700 hover:border-indigo-500 rounded-2xl p-6 transition-all hover:shadow-2xl hover:-translate-y-1 flex flex-col">
+                            <div key={scam.title} className="scam-card group relative bg-slate-800 border border-slate-700 hover:border-indigo-500 rounded-2xl p-6 transition-all hover:shadow-2xl hover:-translate-y-1 flex flex-col">
                                 <div className={`absolute top-0 left-0 right-0 h-1.5 rounded-t-2xl ${c.bar}`}></div>
                                 <div className="flex justify-between items-start mb-4 mt-2">
                                     <div className={`p-3 rounded-xl ${c.iconBg} ${c.iconText}`}>
@@ -3353,6 +3412,7 @@ const Dashboard = ({ setView, defenseMode }) => {
     const { state: userState } = useUser();
     const { userXP, userLevel, stats, completedCourses } = userState;
     const completedCoursesCount = completedCourses.length;
+    const { news, loading: newsLoading, isLive } = useLiveNews();
     return (
                         <div className="space-y-8 animate-fade-in">
                     <div className="relative overflow-hidden rounded-3xl bg-indigo-600 text-white p-8 md:p-12 shadow-xl shadow-none">
@@ -3427,28 +3487,37 @@ const Dashboard = ({ setView, defenseMode }) => {
                             </Card>
                         </div>
 
-                        {/* Feed Column */}
+                      {/* Feed Column */}
                         <div className="lg:col-span-2 space-y-6">
                             <h3 className="font-bold text-xl text-white flex items-center gap-2">
                                 <Icon path={Icons.List} /> Live Intelligence Feed
+                                {isLive && <span className="live-dot ml-1"></span>}
                             </h3>
-                            <div className="grid md:grid-cols-2 gap-4">
-                                {NEWS_FEED.map(item => (
-                                    <a href={item.url} key={item.id} target="_blank" rel="noreferrer" className="block">
-                                        <Card className="hover:border-indigo-500 transition-colors cursor-pointer group h-full">
-                                            <div className="flex justify-between items-start mb-3">
-                                                <Badge color={item.tag === 'SCAM ALERT' ? 'red' : item.tag === 'SECURITY' ? 'green' : 'blue'}>{item.tag}</Badge>
-                                                <span className="text-xs text-slate-400 font-mono">{item.date}</span>
-                                            </div>
-                                            <h4 className="font-bold text-lg mb-2 text-white group-hover:text-indigo-400 transition-colors">{item.title}</h4>
-                                            <p className="text-sm text-slate-400 leading-relaxed mb-4">{item.content}</p>
-                                            <div className="flex items-center text-indigo-500 text-xs font-bold mt-auto">
-                                                Read Analysis <Icon path={Icons.ArrowRight} size={14} className="ml-1" />
-                                            </div>
-                                        </Card>
-                                    </a>
-                                ))}
-                            </div>
+                            {newsLoading ? (
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {[1, 2, 3, 4].map(i => (
+                                        <div key={i} className="h-40 rounded-2xl bg-slate-800 animate-pulse"></div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {news.map(item => (
+                                        <a href={item.url} key={item.id} target="_blank" rel="noreferrer" className="block">
+                                            <Card className="hover:border-indigo-500 transition-colors cursor-pointer group h-full">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <Badge color={item.tag === 'SCAM ALERT' ? 'red' : item.tag === 'SECURITY' ? 'green' : item.tag === 'LIVE AI NEWS' ? 'purple' : 'blue'}>{item.tag}</Badge>
+                                                    <span className="text-xs text-slate-400 font-mono">{item.date}</span>
+                                                </div>
+                                                <h4 className="font-bold text-lg mb-2 text-white group-hover:text-indigo-400 transition-colors">{item.title}</h4>
+                                                <p className="text-sm text-slate-400 leading-relaxed mb-4">{item.content}</p>
+                                                <div className="flex items-center text-indigo-500 text-xs font-bold mt-auto">
+                                                    Read Analysis <Icon path={Icons.ArrowRight} size={14} className="ml-1" />
+                                                </div>
+                                            </Card>
+                                        </a>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -3545,10 +3614,7 @@ const [view, setView] = useState('home');
                                                     <Icon path={Icons.Check} size={10} /> Completed
                                                 </div>
                                             )}
-                                            <div onClick={() => { 
-                                                setActiveCourse(course); 
-                                                setShowQuizResult(null); 
-                                            }}>
+                                         <div onClick={() => setActiveCourse(course)}>
                                                 <div className="flex items-center justify-between mb-4">
                                                     <Badge color={course.category.includes("Scam") ? "red" : course.category.includes("Visual") ? "purple" : "blue"}>{course.category}</Badge>
                                                     <div className="flex items-center gap-1 text-xs font-bold text-slate-400">
@@ -3601,7 +3667,6 @@ const [view, setView] = useState('home');
                                             <Icon path={Icons.Target} className="text-indigo-500" />
                                             Certification Exam ({activeCourse.quizzes.length} Questions)
                                         </h4>
-                                      onClick={() => userActions.saveQuizAnswer(activeCourse.id, qIdx, oIdx)}
                                     </div>
                                     
                                     <div className="space-y-8">
@@ -3620,15 +3685,7 @@ const [view, setView] = useState('home');
                                                             <button 
                                                                 key={oIdx}
                                                                 disabled={isAnswered}
-                                                                onClick={() => {
-                                                                    // Get existing answers for this course, or empty object
-                                                                    const currentAnswers = quizAnswers[activeCourse.id] || {};
-                                                                    // Update state with new answer for this specific question index
-                                                                    setQuizAnswers({
-                                                                        ...quizAnswers,
-                                                                        [activeCourse.id]: { ...currentAnswers, [qIdx]: oIdx }
-                                                                    });
-                                                                }}
+                                                                onClick={() => userActions.saveQuizAnswer(activeCourse.id, qIdx, oIdx)}
                                                                 className={`w-full text-left p-3 rounded-lg border transition-all text-sm flex justify-between items-center ${
                                                                     isAnswered 
                                                                         ? oIdx === q.answer 
@@ -3649,14 +3706,18 @@ const [view, setView] = useState('home');
                                             );
                                         })}
                                     </div>
-
-                                    {/* Footer Stats */}
+{/* Footer Stats */}
                                     <div className="mt-6 pt-4 border-t border-slate-700 flex justify-between items-center">
                                         <div className="text-sm text-slate-400">
                                             Score: <span className="text-white font-bold">
-                                                {quizAnswers[activeCourse.id] ? Object.values(quizAnswers[activeCourse.id]).filter((ans, idx) => ans === activeCourse.quizzes[idx].answer).length : 0}
+                                                {quizAnswers[activeCourse.id] ? Object.entries(quizAnswers[activeCourse.id]).filter(([qIdx, ans]) => ans === activeCourse.quizzes[qIdx].answer).length : 0}
                                             </span> / {activeCourse.quizzes.length}
                                         </div>
+                                        {quizAnswers[activeCourse.id] && Object.keys(quizAnswers[activeCourse.id]).length === activeCourse.quizzes.length && (
+                                            <Button variant="ghost" icon={Icons.RefreshCw} onClick={() => userActions.resetQuiz(activeCourse.id)}>
+                                                Retry Quiz
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                             )}
